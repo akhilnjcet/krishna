@@ -228,6 +228,50 @@ const Quotations = () => {
         ]);
     };
 
+    const handleAddTextEntry = () => {
+        setItems(prev => [
+            ...prev,
+            { 
+                id: Date.now() + Math.random(), 
+                name: '', 
+                description: '', 
+                text: '', 
+                isTextOnly: true, 
+                entryType: 'text', 
+                price: 0, 
+                rate: 0, 
+                quantity: 0, 
+                total: 0, 
+                unit: '', 
+                hasQuantity: false, 
+                hasUnitPrice: false, 
+                isCombined: false 
+            }
+        ]);
+    };
+
+    const handleMoveItemUp = (index) => {
+        if (index <= 0) return;
+        setItems(prev => {
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index - 1];
+            next[index - 1] = item;
+            return synchronizeItemSections ? synchronizeItemSections(next) : next;
+        });
+    };
+
+    const handleMoveItemDown = (index) => {
+        setItems(prev => {
+            if (index >= prev.length - 1) return prev;
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index + 1];
+            next[index + 1] = item;
+            return synchronizeItemSections ? synchronizeItemSections(next) : next;
+        });
+    };
+
     const handleAddNewCombinedSection = () => {
         const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
@@ -1044,6 +1088,9 @@ const Quotations = () => {
                             onToggleEnableQuantity={setShowQuantity}
                             onUpdateItem={handleUpdateItem}
                             onAddItem={handleAddItem}
+                            onAddTextEntry={handleAddTextEntry}
+                            onMoveItemUp={handleMoveItemUp}
+                            onMoveItemDown={handleMoveItemDown}
                             onAddNewCombinedSection={handleAddNewCombinedSection}
                             onRemoveItem={handleRemoveItem}
                             onToggleCombine={handleToggleCombine}
@@ -1416,11 +1463,16 @@ const Quotations = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                            {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                <p className="text-[11px] opacity-85 font-medium mt-0.5 print:text-[10px]">
+                                                    Web: {brandingSettings.website_url}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right print:text-right">
                                         <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1 print:px-3 print:py-0.5 print:text-[10px]">
-                                            QUOTATION
+                                            {brandingSettings?.doc_label_quotation || 'QUOTATION'}
                                         </span>
                                         <p className="text-sm font-black print:text-xs">{quotationNumber}</p>
                                         <p className="text-xs opacity-80 print:text-[10px]">Date: {quotationDate}</p>
@@ -1453,6 +1505,11 @@ const Quotations = () => {
                                                 </p>
                                             </div>
                                         )}
+                                        {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 print:text-[10px]">
+                                                Web: {brandingSettings.website_url}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="text-left sm:text-right print:text-right">
@@ -1460,7 +1517,7 @@ const Quotations = () => {
                                         className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm print:px-3 print:py-1 print:mb-1 print:text-[10.5px]"
                                         style={{ backgroundColor: themeColor || '#4f46e5' }}
                                     >
-                                        QUOTATION
+                                        {brandingSettings?.doc_label_quotation || 'QUOTATION'}
                                     </span>
                                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300 print:text-[11px]">{quotationNumber}</p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px]">Date: {quotationDate}</p>
@@ -1496,6 +1553,11 @@ const Quotations = () => {
                                         <p className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-pre-wrap break-all print:text-[10px] print:text-slate-500">
                                             Phone: {brandingSettings?.company_phone || brandingSettings?.footer_phone || '+91 9447940835'} | Email: {brandingSettings?.company_email || brandingSettings?.footer_email || 'contact@krishnaengg.com'}
                                         </p>
+                                        {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                            <p className="text-[11px] text-slate-400 font-medium mt-0.5 print:text-[10px]">
+                                                Web: {brandingSettings.website_url}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="text-left sm:text-right print:text-right">
@@ -1503,7 +1565,7 @@ const Quotations = () => {
                                         className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm cost-badge print:px-3 print:py-1 print:mb-1 print:text-[10.5px]"
                                         style={{ backgroundColor: themeColor || '#4f46e5' }}
                                     >
-                                        QUOTATION
+                                        {brandingSettings?.doc_label_quotation || 'QUOTATION'}
                                     </span>
                                     <p className="text-xs font-black text-slate-900 dark:text-white print:text-[11px] print:text-slate-900">{quotationNumber}</p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 print:text-[10px] print:text-slate-600">Date: {quotationDate}</p>

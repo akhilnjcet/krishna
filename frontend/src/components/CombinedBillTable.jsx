@@ -90,6 +90,54 @@ export const CombinedBillTableBody = ({
           ? (idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC')
           : '#FFFFFF';
 
+        // Text Only (No Price) row rendering - spans columns with zero financial calculations
+        if (meta.isTextOnly) {
+          const textContent = meta.text || meta.description || meta.name || meta.title || 'Text Note';
+          const remainingCols = 1 + (enableQuantity !== false ? 1 : 0) + (enableUnitPrice !== false ? 1 : 0) + 1;
+          return (
+            <tr 
+              key={idx} 
+              style={{ 
+                borderBottom: `1px solid ${tableBorderColor}`,
+                background: rowBg
+              }}
+            >
+              <td 
+                style={{ 
+                  padding: '0.65rem 0.6rem', 
+                  fontSize: '0.8rem', 
+                  color: '#64748B',
+                  textAlign: 'left',
+                  verticalAlign: 'top',
+                  width: '40px',
+                  fontWeight: '700'
+                }}
+              >
+                {String(idx + 1).padStart(2, '0')}
+              </td>
+
+              <td 
+                colSpan={remainingCols}
+                style={{ 
+                  padding: '0.65rem 0.6rem', 
+                  fontSize: '0.85rem',
+                  verticalAlign: 'top',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ fontWeight: meta.isHeading ? '800' : '600', color: textColor, wordBreak: 'normal', whiteSpace: 'pre-wrap' }}>
+                  {textContent}
+                </div>
+                {meta.details && meta.details !== textContent && (
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '3px', wordBreak: 'normal', whiteSpace: 'pre-wrap' }}>
+                    {meta.details}
+                  </div>
+                )}
+              </td>
+            </tr>
+          );
+        }
+
         const unitLabel = meta.unit === 'Kg' ? 'Kg' : (meta.unit || 'Units');
         const itemName = meta.name || meta.productName || meta.itemName || meta.description || meta.workDescription || 'Billed Item';
 

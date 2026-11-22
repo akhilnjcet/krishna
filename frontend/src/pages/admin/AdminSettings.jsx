@@ -11,11 +11,12 @@ import {
 import api from '../../services/api';
 import MasterResetHub from '../../components/admin/MasterResetHub';
 import NotificationAlertSettingsHub from '../../components/admin/NotificationAlertSettingsHub';
+import BillingSettingsHub, { DEFAULT_DOCUMENT_LABELS } from '../../components/admin/BillingSettingsHub';
 
 const AdminSettings = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTabParam = searchParams.get('tab');
-    const activeTab = currentTabParam === 'reset' ? 'reset' : currentTabParam === 'alerts' ? 'alerts' : 'directives';
+    const activeTab = currentTabParam === 'reset' ? 'reset' : currentTabParam === 'alerts' ? 'alerts' : currentTabParam === 'billing' ? 'billing' : 'directives';
     const setActiveTab = (tab) => {
         setSearchParams(tab === 'directives' ? {} : { tab });
     };
@@ -29,6 +30,13 @@ const AdminSettings = () => {
         company_phone: '+91 9447940835',
         company_address: 'Industrial Area Phase 1, Sector 123',
         company_gstin: '32ABCDE1234F1Z5',
+        website_url: 'https://krishnaengineering.vercel.app',
+        show_website_url: true,
+        ...DEFAULT_DOCUMENT_LABELS,
+        billing_default_terms: '1. Payment is due within 15 days of invoice date.\n2. Goods once sold will not be taken back without technical inspection.\n3. Interest @ 18% p.a. will be charged on overdue payments.',
+        billing_default_notes: 'Supplied as per standard certified structural fabrication specifications.',
+        billing_default_gst_rate: 18,
+        billing_theme_color: '#4f46e5',
         maintenanceMode: false,
         faceThreshold: 0.6,
         allowRegistration: true,
@@ -238,7 +246,7 @@ const AdminSettings = () => {
                         </h1>
                     </div>
                     
-                    {activeTab === 'directives' && (
+                    {(activeTab === 'directives' || activeTab === 'billing') && (
                         <button 
                             onClick={handleSave}
                             disabled={saving}
@@ -262,6 +270,17 @@ const AdminSettings = () => {
                     >
                         <Sliders className="w-4 h-4" />
                         System Directives & Branding
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('billing')}
+                        className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                            activeTab === 'billing'
+                                ? 'bg-blue-600 dark:bg-brand-accent text-white dark:text-black shadow-md'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/40 dark:hover:bg-white/5'
+                        }`}
+                    >
+                        <FileText className="w-4 h-4" />
+                        Billing & Document Customization
                     </button>
                     <button
                         onClick={() => setActiveTab('alerts')}
@@ -289,6 +308,16 @@ const AdminSettings = () => {
                         </span>
                     </button>
                 </div>
+
+                {activeTab === 'billing' && (
+                    <BillingSettingsHub
+                        settings={settings}
+                        updateField={updateField}
+                        handleSave={handleSave}
+                        saving={saving}
+                        success={success}
+                    />
+                )}
 
                 {activeTab === 'alerts' && (
                     <NotificationAlertSettingsHub />

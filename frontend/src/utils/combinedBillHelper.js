@@ -237,6 +237,12 @@ export function computeBillFinancials({
     // Group or sum items
     let subtotal = 0;
     const processedItems = items.map(item => {
+        if (item.isTextOnly || item.entryType === 'text') {
+            return {
+                ...item,
+                lineTotal: 0
+            };
+        }
         const qty = parseFloat(item.quantity ?? 1) || 0;
         const rate = parseFloat(item.rate ?? item.price ?? 0) || 0;
         const lineTotal = item.isBundleHeader && item.bundlePrice !== undefined
@@ -332,6 +338,29 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}, enableQu
     let i = 0;
     while (i < items.length) {
         const item = items[i];
+
+        // 0. Text Only (No Price) entries - Skip from price/sections, preserve sequence
+        if (item.isTextOnly || item.entryType === 'text') {
+            metaList.push({
+                ...item,
+                originalIndex: i,
+                isTextOnly: true,
+                entryType: 'text',
+                isCombined: false,
+                hasQuantity: false,
+                hasUnitPrice: false,
+                sectionId: null,
+                isSectionStart: false,
+                sectionRowCount: 1,
+                isSectionFollower: false,
+                combinedAmount: null,
+                displayPrice: null,
+                displayTotal: null
+            });
+            i++;
+            continue;
+        }
+
         const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
 
         if (!isCombined) {
@@ -434,6 +463,9 @@ export const calculateBillTotals = (items = [], combinedTotals = {}, showTax = f
     // 1. Sum individual uncombined items
     let individualTotal = 0;
     (items || []).forEach(item => {
+        if (item.isTextOnly || item.entryType === 'text') {
+            return; // Exclude text-only entries from all financial calculations
+        }
         const isCombined = Boolean(item.isCombinedMode ?? item.isCombined);
         if (!isCombined) {
             const hasQtyFlag = enableQuantity !== false && item.hasQuantity !== false;

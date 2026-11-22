@@ -47,9 +47,15 @@ exports.getPublicSettings = async (req, res) => {
             'about_title', 'about_content', 'about_image',
             'payment_upi_id', 'payment_payee_name', 'payment_bank_name', 'payment_bank_account', 'payment_bank_ifsc', 'payment_bank_branch',
             'company_name', 'company_tagline', 'company_gstin', 'company_address',
-            'company_logo', 'company_signature', 'company_seal', 'company_stamp', 'show_logo', 'show_signature'
+            'company_logo', 'company_signature', 'company_seal', 'company_stamp', 'show_logo', 'show_signature',
+            'website_url', 'show_website_url'
         ];
-        const settings = await SystemSetting.find({ key: { $in: publicKeys } });
+        const settings = await SystemSetting.find({
+            $or: [
+                { key: { $in: publicKeys } },
+                { key: { $regex: '^(doc_label_|billing_|website_)' } }
+            ]
+        });
         res.json(settings);
     } catch (err) {
         res.status(500).json({ message: err.message });

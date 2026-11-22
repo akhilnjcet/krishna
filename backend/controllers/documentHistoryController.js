@@ -164,15 +164,21 @@ exports.getDocuments = async (req, res) => {
         // Filter by category
         if (category && category !== 'All') {
             // Map category queries to document types
-            if (category === 'Quotations') query.documentType = 'Quotation';
+            if (category === 'Quotations') query.documentType = { $in: ['Quotation', 'Estimate'] };
             else if (category === 'Estimates') query.documentType = 'Estimate';
-            else if (category === 'Invoices') query.documentType = 'Invoice';
+            else if (category === 'Invoices') query.documentType = { $in: ['Invoice', 'Tax Invoice'] };
             else if (category === 'Labour Bills') query.documentType = 'Labour Bill';
             else if (category === 'Transport Bills') query.documentType = 'Transport Bill';
             else if (category === 'Rental Bills') query.documentType = 'Rental Bill';
             else if (category === 'Salary Slips') query.documentType = 'Salary Slip';
             else if (category === 'Reports') query.documentType = { $in: ['Attendance Report', 'Project Report', 'General Report', 'Expense Report'] };
-            else if (category === 'Receipts') query.documentType = 'Payment Receipt';
+            else if (category === 'Receipts') query.documentType = { $in: ['Payment Receipt', 'Receipt', 'Advance Payment'] };
+            else if (category === 'Bills') query.documentType = { $in: ['Bill', 'Labour Bill', 'Transport Bill', 'Rental Bill', 'Purchase Bill', 'Sales Bill', 'Lodge Rent Bill'] };
+            else if (category === 'Purchase Bills') query.documentType = 'Purchase Bill';
+            else if (category === 'Sales Bills') query.documentType = 'Sales Bill';
+            else if (category === 'Credit Notes') query.documentType = 'Credit Note';
+            else if (category === 'Debit Notes') query.documentType = 'Debit Note';
+            else if (category === 'Proforma Invoices') query.documentType = 'Proforma Invoice';
             else query.documentType = category; // Directly match industrial categories: Technical Drawings, Agreements, etc.
         }
 
@@ -461,5 +467,34 @@ exports.getExpiringDocuments = async (req, res) => {
         res.json({ success: true, count: expiring.length, documents: expiring });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+// Update Document Status (Draft, Sent, Approved, Paid, Unpaid, Void, etc.)
+exports.updateDocumentStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        if (!status) {
+            return res.status(400).json({ message: 'Status is required.' });
+        }
+        const doc = await DocumentHistory.findById(id);
+        if (!doc) {
+            return res.status(404).json({ message: 'Document not found.' });
+        }
+        const prevStatus = doc.status;
+        doc.status = String(status).trim();
+        if (!Array.isArray(doc.auditLogs)) doc.auditLogs = [];
+        doc.auditLogs.push({
+            action: 'STATUS_UPDATE',
+            performedBy: req.user?.name || req.user?.email || 'Administrator',
+            timestamp: new Date(),
+            details: `Status updated from "${prevStatus}" to "${doc.status}"`
+        });
+        await doc.save();
+        res.json({ success: true, message: 'Document status updated successfully', document: doc });
+    } catch (err) {
+        console.error('Error updating document status:', err);
+        res.status(500).json({ message: err.message || 'Failed to update document status' });
     }
 };

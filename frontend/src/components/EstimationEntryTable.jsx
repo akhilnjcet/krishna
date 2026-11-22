@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Split, Link as LinkIcon, Zap, LayoutGrid, Table as TableIcon, Package, Hash } from 'lucide-react';
+import { Plus, Trash2, Split, Link as LinkIcon, Zap, LayoutGrid, Table as TableIcon, Package, Hash, ArrowUp, ArrowDown, FileText, Type } from 'lucide-react';
 import { computeItemSectionMeta, PRECONFIGURED_CATALOG } from '../utils/combinedBillHelper';
 
 /**
@@ -19,6 +19,9 @@ export const EstimationEntryTable = ({
   onToggleEnableQuantity,
   onUpdateItem,
   onAddItem,
+  onAddTextEntry,
+  onMoveItemUp,
+  onMoveItemDown,
   onAddNewCombinedSection,
   onRemoveItem,
   onToggleCombine,
@@ -157,6 +160,83 @@ export const EstimationEntryTable = ({
               const rate = (enableUnitPrice !== false && meta.hasUnitPrice !== false) ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
               const rowCalculated = qty * rate;
 
+              // Text Only (No Price) Row in One-Line View
+              if (meta.isTextOnly) {
+                return (
+                  <div
+                    key={meta.id || index}
+                    className="p-2.5 rounded-2xl border transition-all bg-blue-50/40 dark:bg-blue-950/20 border-blue-200/80 dark:border-blue-900/50 shadow-xs"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-black text-xs flex items-center justify-center shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
+                        <FileText size={10} className="inline mr-1" /> Text Only
+                      </span>
+                      <input
+                        type="text"
+                        className={`flex-1 min-w-0 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 ${meta.isHeading ? 'font-black' : 'font-semibold'}`}
+                        value={meta.text || meta.description || meta.name || ''}
+                        onChange={(e) => {
+                          onUpdateItem(index, 'text', e.target.value);
+                          onUpdateItem(index, 'description', e.target.value);
+                          onUpdateItem(index, 'name', e.target.value);
+                        }}
+                        placeholder="Enter heading, title, definition, scope of work, note, or information (No price)..."
+                      />
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => onMoveItemUp?.(index)}
+                        className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                        title="Move Up"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === items.length - 1}
+                        onClick={() => onMoveItemDown?.(index)}
+                        className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                        title="Move Down"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveItem(index)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg shrink-0 transition"
+                        title="Remove row"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-blue-100 dark:border-blue-900/40 text-[11px] text-slate-500">
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(meta.isHeading)}
+                          onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
+                          className="w-3.5 h-3.5 rounded accent-blue-600"
+                        />
+                        <span>Section Heading (Bold)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onUpdateItem(index, 'isTextOnly', false);
+                          onUpdateItem(index, 'entryType', 'item');
+                        }}
+                        className="text-indigo-600 dark:text-indigo-400 hover:underline font-bold text-[10px]"
+                      >
+                        Convert to Normal Item
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={meta.id || index}
@@ -165,7 +245,7 @@ export const EstimationEntryTable = ({
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-300 dark:hover:border-indigo-700'
                     }`}
                 >
-                  {/* Line 1: Sl No + Item Name Input + Delete Button */}
+                  {/* Line 1: Sl No + Item Name Input + Move Up / Down + Delete Button */}
                   <div className="flex items-center gap-1.5">
                     <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs flex items-center justify-center shrink-0">
                       {index + 1}
@@ -180,6 +260,24 @@ export const EstimationEntryTable = ({
                       placeholder="Item name (e.g. MS Beam, Crane)..."
                     />
 
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      onClick={() => onMoveItemUp?.(index)}
+                      className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                      title="Move Up"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === items.length - 1}
+                      onClick={() => onMoveItemDown?.(index)}
+                      className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                      title="Move Down"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
                     <button
                       type="button"
                       onClick={() => onRemoveItem(index)}
@@ -415,6 +513,89 @@ export const EstimationEntryTable = ({
               const rate = (enableUnitPrice !== false && meta.hasUnitPrice !== false) ? (parseFloat(meta.price ?? meta.rate ?? 0) || 0) : 0;
               const rowCalculated = qty * rate;
 
+              // Text Only (No Price) Card in Cards View
+              if (meta.isTextOnly) {
+                return (
+                  <div
+                    key={meta.id || index}
+                    className="p-3.5 rounded-2xl border transition-all bg-blue-50/50 dark:bg-blue-950/20 border-blue-300 dark:border-blue-900/60 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-black text-xs border border-blue-200 dark:border-blue-800">
+                          #{index + 1}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                          <FileText size={11} /> Text Only (No Price)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => onMoveItemUp?.(index)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                          title="Move Up"
+                        >
+                          <ArrowUp size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={index === items.length - 1}
+                          onClick={() => onMoveItemDown?.(index)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                          title="Move Down"
+                        >
+                          <ArrowDown size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem(index)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
+                          title="Remove item"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 mb-2">
+                      <input
+                        type="text"
+                        className={`w-full bg-slate-50 dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 ${meta.isHeading ? 'font-black' : 'font-semibold'}`}
+                        value={meta.text || meta.description || meta.name || ''}
+                        onChange={(e) => {
+                          onUpdateItem(index, 'text', e.target.value);
+                          onUpdateItem(index, 'description', e.target.value);
+                          onUpdateItem(index, 'name', e.target.value);
+                        }}
+                        placeholder="Enter heading, title, definition, scope of work, note, or information (No price)..."
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-blue-100 dark:border-blue-900/40">
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none text-[11px] text-slate-600 dark:text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(meta.isHeading)}
+                          onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
+                          className="w-3.5 h-3.5 rounded accent-blue-600"
+                        />
+                        <span>Section Heading (Bold)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onUpdateItem(index, 'isTextOnly', false);
+                          onUpdateItem(index, 'entryType', 'item');
+                        }}
+                        className="text-indigo-600 dark:text-indigo-400 hover:underline font-bold text-[10px]"
+                      >
+                        Convert to Normal Item
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={meta.id || index}
@@ -423,7 +604,7 @@ export const EstimationEntryTable = ({
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm'
                     }`}
                 >
-                  {/* Card Header: Item Badge, Combined Tag, Delete */}
+                  {/* Card Header: Item Badge, Combined Tag, Move Up / Down, Delete */}
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black text-xs border border-indigo-100 dark:border-indigo-900/40">
@@ -436,14 +617,34 @@ export const EstimationEntryTable = ({
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => onRemoveItem(index)}
-                      className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
-                      title="Remove item"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => onMoveItemUp?.(index)}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                        title="Move Up"
+                      >
+                        <ArrowUp size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === items.length - 1}
+                        onClick={() => onMoveItemDown?.(index)}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                        title="Move Down"
+                      >
+                        <ArrowDown size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveItem(index)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
+                        title="Remove item"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Item Name & Description */}
@@ -749,8 +950,8 @@ export const EstimationEntryTable = ({
                 <th style={{ padding: '0.65rem 0.3rem', textAlign: 'center', width: '100px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399' }}>
                   {enableUnitPrice ? 'Package (₹)' : 'Total (₹)'}
                 </th>
-                <th style={{ padding: '0.65rem 0.2rem', textAlign: 'center', width: '36px', fontSize: '0.75rem', fontWeight: '800' }}>
-                  &nbsp;
+                <th style={{ padding: '0.65rem 0.2rem', textAlign: 'center', width: '92px', fontSize: '0.72rem', fontWeight: '800' }}>
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -758,7 +959,7 @@ export const EstimationEntryTable = ({
               {items.length === 0 ? (
                 <tr>
                   <td colSpan="8" style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B', fontSize: '0.85rem' }}>
-                    No items added yet. Click "+ Add Item" below to start.
+                    No items added yet. Click "+ Add Normal Item" or "+ Add Text Only" below to start.
                   </td>
                 </tr>
               ) : (
@@ -767,6 +968,103 @@ export const EstimationEntryTable = ({
                   const prevIsCombined = prevItem && Boolean(prevItem.isCombinedMode ?? prevItem.isCombined);
                   const itemNameVal = meta.name !== undefined ? meta.name : (meta.description || '');
                   const itemDescVal = meta.description ?? '';
+
+                  // Text Only (No Price) Table Row
+                  if (meta.isTextOnly) {
+                    return (
+                      <tr
+                        key={meta.id || index}
+                        style={{
+                          borderBottom: '1px solid rgba(226, 232, 240, 0.7)',
+                          background: 'rgba(59, 130, 246, 0.04)',
+                          transition: 'background 0.15s ease'
+                        }}
+                      >
+                        {/* Sl. No. */}
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', fontWeight: '800', fontSize: '0.8rem', color: '#3B82F6' }}>
+                          {index + 1}
+                        </td>
+
+                        {/* Full Span Text Input */}
+                        <td colSpan="5" style={{ padding: '0.6rem 0.6rem' }}>
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
+                                <FileText size={10} /> Text Only (No Price)
+                              </span>
+                              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(meta.isHeading)}
+                                  onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
+                                  className="w-3 h-3 rounded accent-blue-600"
+                                />
+                                <span>Heading Style</span>
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onUpdateItem(index, 'isTextOnly', false);
+                                  onUpdateItem(index, 'entryType', 'item');
+                                }}
+                                className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold ml-auto"
+                              >
+                                Convert to Normal Item
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              className={`w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 ${meta.isHeading ? 'font-black text-sm' : 'font-semibold'}`}
+                              value={meta.text || meta.description || meta.name || ''}
+                              onChange={(e) => {
+                                onUpdateItem(index, 'text', e.target.value);
+                                onUpdateItem(index, 'description', e.target.value);
+                                onUpdateItem(index, 'name', e.target.value);
+                              }}
+                              placeholder="Enter text, heading, definition, note, terms, or information..."
+                            />
+                          </div>
+                        </td>
+
+                        {/* Package / Total (₹) */}
+                        <td style={{ padding: '0.45rem 0.35rem', textAlign: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                          —
+                        </td>
+
+                        {/* Actions: Move Up, Move Down, Delete */}
+                        <td style={{ padding: '0.5rem 0.25rem', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => onMoveItemUp?.(index)}
+                              className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                              title="Move Up"
+                            >
+                              <ArrowUp size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === items.length - 1}
+                              onClick={() => onMoveItemDown?.(index)}
+                              className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                              title="Move Down"
+                            >
+                              <ArrowDown size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onRemoveItem(index)}
+                              className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded transition"
+                              title="Remove row"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
 
                   return (
                     <tr
@@ -1096,16 +1394,36 @@ export const EstimationEntryTable = ({
                         </td>
                       )}
 
-                      {/* Action: Delete */}
-                      <td style={{ padding: '0.5rem 0.5rem', textAlign: 'center', verticalAlign: 'middle' }}>
-                        <button
-                          type="button"
-                          onClick={() => onRemoveItem(index)}
-                          className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition"
-                          title="Remove row"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      {/* Action: Reorder & Delete */}
+                      <td style={{ padding: '0.4rem 0.25rem', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => onMoveItemUp?.(index)}
+                            className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                            title="Move Up"
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === items.length - 1}
+                            onClick={() => onMoveItemDown?.(index)}
+                            className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                            title="Move Down"
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveItem(index)}
+                            className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded transition"
+                            title="Remove row"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1124,8 +1442,18 @@ export const EstimationEntryTable = ({
             className="flex-1 sm:flex-initial bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm border border-indigo-100 dark:border-indigo-900/50"
             onClick={onAddItem}
           >
-            <Plus size={15} /> Add Item
+            <Plus size={15} /> Add Normal Item
           </button>
+
+          {onAddTextEntry && (
+            <button
+              type="button"
+              className="flex-1 sm:flex-initial bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm border border-blue-100 dark:border-blue-900/50"
+              onClick={onAddTextEntry}
+            >
+              <FileText size={15} /> Add Text Only (No Price)
+            </button>
+          )}
 
           <button
             type="button"

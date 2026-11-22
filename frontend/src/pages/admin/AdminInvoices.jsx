@@ -6,6 +6,7 @@ import { CreditCard, Send, CheckCircle, Clock, Loader2, IndianRupee, Download, R
 
 import Invoices from './Invoices';
 import LabourBillsTab from './LabourBillsTab';
+import DocumentHistory from './DocumentHistory';
 
 const AdminInvoices = () => {
     const [invoices, setInvoices] = useState([]);
@@ -65,7 +66,15 @@ const AdminInvoices = () => {
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans min-h-screen bg-slate-50 dark:bg-slate-800">
             {/* Tab Navigation */}
-            <div className="no-print flex items-center gap-3 mb-6 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit">
+            <div className="no-print flex items-center gap-3 mb-6 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm w-fit flex-wrap">
+                <button
+                    onClick={() => setActiveSubTab('hub')}
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
+                        activeSubTab === 'hub' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'
+                    }`}
+                >
+                    Centralized Billing Hub & History
+                </button>
                 <button
                     onClick={() => setActiveSubTab('ledger')}
                     className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition ${
@@ -92,7 +101,9 @@ const AdminInvoices = () => {
                 </button>
             </div>
 
-            {activeSubTab === 'builder' ? (
+            {activeSubTab === 'hub' ? (
+                <DocumentHistory />
+            ) : activeSubTab === 'builder' ? (
                 <Invoices />
             ) : activeSubTab === 'labour-transport' ? (
                 <LabourBillsTab />

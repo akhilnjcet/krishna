@@ -4,7 +4,7 @@ import {
     Printer, Save, Plus, Trash2, ShieldCheck, DollarSign, Clock, Calendar, 
     Hash, FileText, Palette, CheckCircle2, AlertCircle, Copy, RotateCcw, 
     History, Search, X, User, AlertTriangle, KeyRound, Wrench, ShieldAlert,
-    Sparkles, Check, Download, Bookmark
+    Sparkles, Check, Download, Bookmark, ArrowUp, ArrowDown, Type
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
@@ -253,6 +253,50 @@ const RentalBills = () => {
         ]);
     };
 
+    const handleAddTextEntry = () => {
+        setRentedItems(prev => [
+            ...prev,
+            {
+                id: Date.now() + Math.random(),
+                itemName: '',
+                itemNo: '',
+                text: '',
+                isTextOnly: true,
+                entryType: 'text',
+                rateType: 'Day',
+                rate: 0,
+                quantity: 0,
+                duration: 0,
+                checkoutCondition: '',
+                returnCondition: '',
+                remarks: '',
+                isCombined: false
+            }
+        ]);
+    };
+
+    const handleMoveItemUp = (index) => {
+        if (index <= 0) return;
+        setRentedItems(prev => {
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index - 1];
+            next[index - 1] = item;
+            return synchronizeItemSections ? synchronizeItemSections(next) : next;
+        });
+    };
+
+    const handleMoveItemDown = (index) => {
+        setRentedItems(prev => {
+            if (index >= prev.length - 1) return prev;
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index + 1];
+            next[index + 1] = item;
+            return synchronizeItemSections ? synchronizeItemSections(next) : next;
+        });
+    };
+
     const handleAddNewCombinedSection = () => {
         const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
@@ -370,6 +414,7 @@ const RentalBills = () => {
     );
 
     const rentalSubtotal = rentalMeta.reduce((acc, item) => {
+        if (item.isTextOnly || item.entryType === 'text') return acc;
         if (item.isCombined) {
             return item.isSectionStart ? acc + Number(item.combinedAmount || 0) : acc;
         }
@@ -1009,12 +1054,18 @@ const RentalBills = () => {
                                     </label>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <button
                                     onClick={handleAddItem}
                                     className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
                                 >
                                     <Plus className="w-3.5 h-3.5" /> Add Asset
+                                </button>
+                                <button
+                                    onClick={handleAddTextEntry}
+                                    className="bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 hover:bg-sky-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition border border-sky-200 dark:border-sky-800"
+                                >
+                                    <Type className="w-3.5 h-3.5" /> Add Text Only (No Price)
                                 </button>
                                 <button
                                     onClick={handleAddNewCombinedSection}
@@ -1030,94 +1081,146 @@ const RentalBills = () => {
                                 <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Machine #{idx + 1}</span>
+                                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">
+                                                {item.isTextOnly ? `Text Row #${idx + 1}` : `Machine #${idx + 1}`}
+                                            </span>
+                                            {item.isTextOnly && (
+                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 border border-sky-200">
+                                                    Text Only (No Price)
+                                                </span>
+                                            )}
                                             {item.isCombined && (
                                                 <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-200">
                                                     Package Item
                                                 </span>
                                             )}
                                         </div>
-                                        {rentedItems.length > 1 && (
+                                        <div className="flex items-center gap-1">
                                             <button
-                                                onClick={() => handleRemoveItem(idx)}
-                                                className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
+                                                type="button"
+                                                onClick={() => handleMoveItemUp(idx)}
+                                                disabled={idx === 0}
+                                                className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                                                title="Move Up"
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                <ArrowUp className="w-3.5 h-3.5" />
                                             </button>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div className="col-span-2">
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Machine / Tool Name</label>
-                                            <input
-                                                type="text"
-                                                value={item.itemName}
-                                                onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)}
-                                                placeholder="e.g. 400A Diesel Generator"
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Asset / Serial No</label>
-                                            <input
-                                                type="text"
-                                                value={item.itemNo}
-                                                onChange={(e) => handleItemChange(idx, 'itemNo', e.target.value)}
-                                                placeholder="AST-001"
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Pricing Model</label>
-                                            <select
-                                                value={item.rateType}
-                                                onChange={(e) => handleItemChange(idx, 'rateType', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                            <button
+                                                type="button"
+                                                onClick={() => handleMoveItemDown(idx)}
+                                                disabled={idx === rentedItems.length - 1}
+                                                className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                                                title="Move Down"
                                             >
-                                                <option value="Hour">Hour</option>
-                                                <option value="Day">Day</option>
-                                                <option value="Week">Week</option>
-                                                <option value="Month">Month</option>
-                                                <option value="Fixed">Fixed</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Rate (₹)</label>
-                                            <input
-                                                type="number"
-                                                value={item.rate}
-                                                onChange={(e) => handleItemChange(idx, 'rate', e.target.value)}
-                                                disabled={item.isCombined}
-                                                className={`w-full border rounded-xl px-2 py-1.5 text-xs font-bold focus:outline-none ${
-                                                    item.isCombined
-                                                        ? 'bg-slate-100 dark:bg-slate-800 border-dashed text-slate-400'
-                                                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
-                                                }`}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Duration</label>
-                                            <input
-                                                type="number"
-                                                value={item.duration}
-                                                onChange={(e) => handleItemChange(idx, 'duration', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Qty</label>
-                                            <input
-                                                type="number"
-                                                value={item.quantity}
-                                                onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
+                                                <ArrowDown className="w-3.5 h-3.5" />
+                                            </button>
+                                            {rentedItems.length > 1 && (
+                                                <button
+                                                    onClick={() => handleRemoveItem(idx)}
+                                                    className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
+                                                    title="Delete Item"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {item.isTextOnly ? (
+                                        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-sky-200 dark:border-sky-800/50 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400">Heading / Condition Note / Information</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleItemChange(idx, 'isTextOnly', false)}
+                                                    className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 underline cursor-pointer"
+                                                >
+                                                    Convert to machine entry
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={item.itemName || ''}
+                                                onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)}
+                                                placeholder="Enter heading, machine notes, terms, or definitions..."
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <div className="col-span-2">
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Machine / Tool Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.itemName}
+                                                        onChange={(e) => handleItemChange(idx, 'itemName', e.target.value)}
+                                                        placeholder="e.g. 400A Diesel Generator"
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Asset / Serial No</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.itemNo}
+                                                        onChange={(e) => handleItemChange(idx, 'itemNo', e.target.value)}
+                                                        placeholder="AST-001"
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-4 gap-2">
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Pricing Model</label>
+                                                    <select
+                                                        value={item.rateType}
+                                                        onChange={(e) => handleItemChange(idx, 'rateType', e.target.value)}
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    >
+                                                        <option value="Hour">Hour</option>
+                                                        <option value="Day">Day</option>
+                                                        <option value="Week">Week</option>
+                                                        <option value="Month">Month</option>
+                                                        <option value="Fixed">Fixed</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Rate (₹)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={item.rate}
+                                                        onChange={(e) => handleItemChange(idx, 'rate', e.target.value)}
+                                                        disabled={item.isCombined}
+                                                        className={`w-full border rounded-xl px-2 py-1.5 text-xs font-bold focus:outline-none ${
+                                                            item.isCombined
+                                                                ? 'bg-slate-100 dark:bg-slate-800 border-dashed text-slate-400'
+                                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                                                        }`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Duration</label>
+                                                    <input
+                                                        type="number"
+                                                        value={item.duration}
+                                                        onChange={(e) => handleItemChange(idx, 'duration', e.target.value)}
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Quantity</label>
+                                                    <input
+                                                        type="number"
+                                                        value={item.quantity}
+                                                        onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
 
                                     {/* Combined Section Controls */}
                                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-amber-50/40 dark:bg-amber-950/20 p-2.5 rounded-xl">
@@ -1473,11 +1576,16 @@ const RentalBills = () => {
                                                         </p>
                                                     </div>
                                                 )}
+                                                {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                    <p className="text-[11px] opacity-85 font-medium mt-0.5 print:text-[10px]">
+                                                        Web: {brandingSettings.website_url}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
-                                                RENTAL AGREEMENT
+                                                {brandingSettings?.doc_label_rental_bill || 'RENTAL AGREEMENT'}
                                             </span>
                                             <p className="text-sm font-black">{billNumber}</p>
                                             <p className="text-xs opacity-80">Issued: {issueDate}</p>
@@ -1510,11 +1618,18 @@ const RentalBills = () => {
                                                 </div>
                                             )}
                                             <p className="text-[11px] text-slate-400 mt-0.5">Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835</p>
+                                            {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                <p className="text-[11px] text-slate-400 font-medium mt-0.5 print:text-[10px]">
+                                                    Web: {brandingSettings.website_url}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
                                         <span className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm" style={{ backgroundColor: themeColor }}>
-                                            {workflowMode === 'checkout' ? 'RENTAL ISSUE DOCKET' : 'SETTLEMENT RECEIPT'}
+                                            {workflowMode === 'checkout' 
+                                                ? (brandingSettings?.doc_label_rental_bill || 'RENTAL ISSUE DOCKET') 
+                                                : (brandingSettings?.doc_label_receipt || 'SETTLEMENT RECEIPT')}
                                         </span>
                                         <p className="text-xs font-black text-slate-900 dark:text-white">{billNumber}</p>
                                         <p className="text-xs text-slate-500">Issue Date: {issueDate}</p>
@@ -1563,6 +1678,19 @@ const RentalBills = () => {
                                     </thead>
                                     <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
                                         {rentalMeta.map((item, idx) => {
+                                            if (item.isTextOnly || item.entryType === 'text') {
+                                                const colSpan = 4 + (showUnitPrice ? 1 : 0) + (showQuantity ? 1 : 0);
+                                                return (
+                                                    <tr key={item.id || idx} className="bg-slate-50/80 dark:bg-slate-800/80 border-y border-slate-200 dark:border-slate-700">
+                                                        <td className="p-3 font-bold text-slate-400 text-center">{idx + 1}</td>
+                                                        <td colSpan={colSpan - 1} className="p-3 text-left">
+                                                            <span className="font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide text-xs">
+                                                                {item.itemName || item.text || item.name || 'NOTE / TERMS'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
                                             const total = (parseFloat(item.rate || 0) * parseFloat(item.duration || 1) * parseFloat(item.quantity || 1));
                                             return (
                                                 <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>

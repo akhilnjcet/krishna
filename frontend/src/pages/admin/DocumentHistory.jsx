@@ -4,7 +4,7 @@ import {
     Search, Filter, ArrowUpDown, Download, Printer, Share2, Eye, 
     Copy, Archive, Trash2, RotateCcw, AlertTriangle, FileText, 
     ChevronLeft, ChevronRight, X, Calendar, User, Layers, Info,
-    FileCheck2, TrendingUp, CheckCircle2
+    FileCheck2, TrendingUp, CheckCircle2, Edit3
 } from 'lucide-react';
 import api from '../../services/api';
 import useAuthStore from '../../stores/authStore';
@@ -210,13 +210,48 @@ const DocumentHistory = () => {
         }
     };
 
+    // Edit document in Studio
+    const handleEdit = (doc) => {
+        if (!doc?.data) return alert('Document source data unavailable for editing.');
+        try {
+            localStorage.setItem('duplicated_doc_type', doc.documentType);
+            localStorage.setItem('duplicated_doc_data', JSON.stringify({ ...doc.data, _editingDocumentId: doc._id }));
+            
+            let targetPath = '/admin/invoices-studio';
+            if (doc.documentType === 'Quotation' || doc.documentType === 'Estimate') {
+                targetPath = '/admin/quotations-studio';
+            } else if (doc.documentType === 'Labour Bill' || doc.documentType === 'Transport Bill') {
+                targetPath = '/admin/labour-bills';
+            } else if (doc.documentType === 'Rental Bill') {
+                targetPath = '/admin/rental-bills';
+            }
+            window.location.hash = targetPath;
+        } catch (err) {
+            console.error('Failed to open document for editing:', err);
+        }
+    };
+
+    // Update Document Status directly
+    const handleUpdateStatus = async (id, newStatus) => {
+        try {
+            await api.put(`/document-history/${id}/status`, { status: newStatus });
+            setDocuments(prev => prev.map(d => d._id === id ? { ...d, status: newStatus } : d));
+            if (selectedDocDetail?._id === id) {
+                setSelectedDocDetail(prev => prev ? { ...prev, status: newStatus } : null);
+            }
+        } catch (err) {
+            console.error('Failed to update status:', err);
+            alert('Failed to update document status.');
+        }
+    };
+
     return (
         <div className="p-4 md:p-8 space-y-8 bg-slate-50 dark:bg-slate-800 min-h-screen relative font-sans">
             {/* Header Banner */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Document History & Archive</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">Access, search, filter, and inspect previous versions of generated invoices, quotations, receipts, and reports.</p>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Centralized Billing & Document History</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Search, filter, view, edit, print, and download PDFs across all billing modules and archives.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
@@ -232,9 +267,9 @@ const DocumentHistory = () => {
                 </div>
             </div>
 
-            {/* Quick Categories Bar */}
+            {/* Quick Categories Bar across ALL billing modules */}
             <div className="flex flex-wrap gap-2 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 w-fit">
-                {['All', 'Quotations', 'Estimates', 'Invoices', 'Labour Bills', 'Transport Bills', 'Rental Bills', 'Salary Slips', 'Reports', 'Receipts'].map(cat => (
+                {['All', 'Invoices', 'Quotations', 'Estimates', 'Bills', 'Receipts', 'Purchase Bills', 'Sales Bills', 'Credit Notes', 'Debit Notes', 'Proforma Invoices', 'Labour Bills', 'Transport Bills', 'Rental Bills'].map(cat => (
                     <button
                         key={cat}
                         onClick={() => { setCategory(cat); setPage(1); }}
@@ -406,35 +441,64 @@ const DocumentHistory = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
-                                            doc.status === 'Paid' || doc.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                            doc.status === 'Sent' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                                            doc.status === 'Converted' ? 'bg-violet-50 text-violet-600 border border-violet-100' :
-                                            doc.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                                            doc.status === 'Expired' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                                            doc.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                            doc.status === 'Printed' ? 'bg-teal-50 text-teal-600 border border-teal-100' :
-                                            'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
-                                        }`}>
-                                            {doc.status}
-                                        </span>
+                                        <select
+                                            value={doc.status || 'Draft'}
+                                            onChange={(e) => handleUpdateStatus(doc._id, e.target.value)}
+                                            className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider border outline-none cursor-pointer ${
+                                                doc.status === 'Paid' || doc.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                                doc.status === 'Sent' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                                doc.status === 'Converted' ? 'bg-violet-50 text-violet-600 border-violet-200' :
+                                                doc.status === 'Rejected' || doc.status === 'Cancelled' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                                                doc.status === 'Expired' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                                                doc.status === 'Pending' || doc.status === 'Unpaid' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                                'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                            }`}
+                                        >
+                                            <option value="Draft">Draft</option>
+                                            <option value="Sent">Sent</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Paid">Paid</option>
+                                            <option value="Unpaid">Unpaid</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                            <option value="Void">Void</option>
+                                        </select>
                                     </td>
                                     <td className="px-6 py-5 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            {/* Edit in Studio */}
+                                            <button 
+                                                onClick={() => handleEdit(doc)}
+                                                className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl transition"
+                                                title="Edit in Studio"
+                                            >
+                                                <Edit3 className="w-4 h-4" />
+                                            </button>
+                                            {/* View Details / Versions */}
                                             <button 
                                                 onClick={() => handleViewDetail(doc)}
                                                 className="p-2 hover:bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition"
                                                 title="View Version log"
                                             >
-                                                <Eye className="w-4.5 h-4.5" />
+                                                <Eye className="w-4 h-4" />
                                             </button>
+                                            {/* Print PDF */}
+                                            {doc.pdfData && (
+                                                <button 
+                                                    onClick={() => handlePrintPDF(doc.pdfData)}
+                                                    className="p-2 hover:bg-slate-100 dark:bg-slate-800 text-emerald-600 rounded-xl transition"
+                                                    title="Print Document"
+                                                >
+                                                    <Printer className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {/* Download PDF */}
                                             {doc.pdfData && (
                                                 <button 
                                                     onClick={() => handleDownloadPDF(doc.documentNumber, doc.pdfData)}
-                                                    className="p-2 hover:bg-slate-100 dark:bg-slate-800 text-indigo-600 rounded-xl transition"
+                                                    className="p-2 hover:bg-slate-100 dark:bg-slate-800 text-blue-600 rounded-xl transition"
                                                     title="Download PDF"
                                                 >
-                                                    <Download className="w-4.5 h-4.5" />
+                                                    <Download className="w-4 h-4" />
                                                 </button>
                                             )}
                                             {/* Convert to Invoice — visible for Quotation type only */}
@@ -444,7 +508,7 @@ const DocumentHistory = () => {
                                                     className="p-2 hover:bg-violet-50 text-violet-600 rounded-xl transition"
                                                     title="Convert to Invoice"
                                                 >
-                                                    <FileCheck2 className="w-4.5 h-4.5" />
+                                                    <FileCheck2 className="w-4 h-4" />
                                                 </button>
                                             )}
                                             <button 
@@ -452,8 +516,17 @@ const DocumentHistory = () => {
                                                 className="p-2 hover:bg-slate-100 dark:bg-slate-800 text-teal-600 rounded-xl transition"
                                                 title="Duplicate to Studio"
                                             >
-                                                <Copy className="w-4.5 h-4.5" />
+                                                <Copy className="w-4 h-4" />
                                             </button>
+                                            {isAdmin && (
+                                                <button 
+                                                    onClick={() => handleDelete(doc._id)}
+                                                    className="p-2 hover:bg-rose-50 text-rose-600 rounded-xl transition"
+                                                    title="Delete permanently"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

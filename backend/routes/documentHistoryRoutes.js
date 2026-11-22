@@ -9,6 +9,7 @@ router.get('/expiring', protect, documentHistoryController.getExpiringDocuments)
 router.post('/:id/audit', protect, documentHistoryController.recordDocumentAction);
 router.get('/', protect, documentHistoryController.getDocuments);
 router.post('/:id/archive', protect, documentHistoryController.toggleArchiveDocument);
+router.put('/:id/status', protect, documentHistoryController.updateDocumentStatus);
 router.delete('/:id', protect, admin, documentHistoryController.deleteDocument);
 router.get('/:id', protect, documentHistoryController.getDocumentById);
 

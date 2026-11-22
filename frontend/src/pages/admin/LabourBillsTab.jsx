@@ -4,7 +4,7 @@ import {
     Printer, Save, Plus, Trash2, Truck, Users, Calendar, Hash, FileText, 
     Palette, CheckCircle, ShieldCheck, DollarSign, MapPin, Package, Clock,
     Copy, RotateCcw, History, Search, X, UserCheck, Compass, Phone, ArrowRight,
-    Sparkles, Check, Download, Bookmark
+    Sparkles, Check, Download, Bookmark, ArrowUp, ArrowDown, Type
 } from 'lucide-react';
 import api from '../../services/api';
 import { numberToIndianRupees } from '../../utils/numberToIndianRupees';
@@ -179,6 +179,47 @@ const LabourBillsTab = () => {
         ]);
     };
 
+    const handleAddTextRow = () => {
+        setLabourRows(prev => [
+            ...prev,
+            { 
+                id: Date.now() + Math.random(), 
+                workDescription: '', 
+                isTextOnly: true, 
+                entryType: 'text', 
+                unit: '', 
+                labourersCount: 0, 
+                workingDays: 0, 
+                dailyRate: 0, 
+                price: 0, 
+                total: 0, 
+                isCombined: false 
+            }
+        ]);
+    };
+
+    const handleMoveLabourRowUp = (index) => {
+        if (index <= 0) return;
+        setLabourRows(prev => {
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index - 1];
+            next[index - 1] = item;
+            return synchronizeItemSections(next);
+        });
+    };
+
+    const handleMoveLabourRowDown = (index) => {
+        setLabourRows(prev => {
+            if (index >= prev.length - 1) return prev;
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index + 1];
+            next[index + 1] = item;
+            return synchronizeItemSections(next);
+        });
+    };
+
     const handleAddNewCombinedSection = () => {
         const secId = `sec-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         setCombinedTotals(prev => ({ ...prev, [secId]: 0 }));
@@ -259,6 +300,7 @@ const LabourBillsTab = () => {
     );
 
     const labourTotal = (billMode === 'transport') ? 0 : labourMeta.reduce((sum, r) => {
+        if (r.isTextOnly || r.entryType === 'text') return sum;
         if (r.isCombined) {
             return r.isSectionStart ? sum + Number(r.combinedAmount || 0) : sum;
         }
@@ -1028,12 +1070,18 @@ const LabourBillsTab = () => {
                                         </label>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <button
                                         onClick={handleAddLabourRow}
                                         className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition"
                                     >
                                         <Plus className="w-3.5 h-3.5" /> Add Task
+                                    </button>
+                                    <button
+                                        onClick={handleAddTextRow}
+                                        className="bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 hover:bg-sky-100 px-3 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 transition border border-sky-200 dark:border-sky-800"
+                                    >
+                                        <Type className="w-3.5 h-3.5" /> Add Text Only (No Price)
                                     </button>
                                     <button
                                         onClick={handleAddNewCombinedSection}
@@ -1049,82 +1097,134 @@ const LabourBillsTab = () => {
                                     <div key={row.id} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">Crew Row #{idx + 1}</span>
+                                                <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400">
+                                                    {row.isTextOnly ? `Text Row #${idx + 1}` : `Crew Row #${idx + 1}`}
+                                                </span>
+                                                {row.isTextOnly && (
+                                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 border border-sky-200">
+                                                        Text Only (No Price)
+                                                    </span>
+                                                )}
                                                 {row.isCombined && (
                                                     <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-200">
                                                         Combined Row
                                                     </span>
                                                 )}
                                             </div>
-                                            {labourRows.length > 1 && (
+                                            <div className="flex items-center gap-1">
                                                 <button
-                                                    onClick={() => handleRemoveLabourRow(idx)}
-                                                    className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
+                                                    type="button"
+                                                    onClick={() => handleMoveLabourRowUp(idx)}
+                                                    disabled={idx === 0}
+                                                    className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                                                    title="Move Up"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    <ArrowUp className="w-3.5 h-3.5" />
                                                 </button>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Description of Work</label>
-                                            <input
-                                                type="text"
-                                                value={row.workDescription}
-                                                onChange={(e) => handleLabourRowChange(idx, 'workDescription', e.target.value)}
-                                                placeholder="e.g. Masons, Certified Structural Welders, Erection Riggers"
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-4 gap-2">
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Unit</label>
-                                                <select
-                                                    value={row.unit || 'Days'}
-                                                    onChange={(e) => handleLabourRowChange(idx, 'unit', e.target.value)}
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleMoveLabourRowDown(idx)}
+                                                    disabled={idx === labourRows.length - 1}
+                                                    className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition"
+                                                    title="Move Down"
                                                 >
-                                                    <option value="Days">Days</option>
-                                                    <option value="Shifts">Shifts</option>
-                                                    <option value="Hours">Hours</option>
-                                                    <option value="Units">Units</option>
-                                                    <option value="Trips">Trips</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Labour Count</label>
-                                                <input
-                                                    type="number"
-                                                    value={row.labourersCount}
-                                                    onChange={(e) => handleLabourRowChange(idx, 'labourersCount', e.target.value)}
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Duration</label>
-                                                <input
-                                                    type="number"
-                                                    value={row.workingDays}
-                                                    onChange={(e) => handleLabourRowChange(idx, 'workingDays', e.target.value)}
-                                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Rate / Person (₹)</label>
-                                                <input
-                                                    type="number"
-                                                    value={row.dailyRate}
-                                                    onChange={(e) => handleLabourRowChange(idx, 'dailyRate', e.target.value)}
-                                                    disabled={row.isCombined}
-                                                    className={`w-full border rounded-xl px-2 py-1.5 text-xs font-bold focus:outline-none ${
-                                                        row.isCombined
-                                                            ? 'bg-slate-100 dark:bg-slate-800 border-dashed text-slate-400'
-                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
-                                                    }`}
-                                                />
+                                                    <ArrowDown className="w-3.5 h-3.5" />
+                                                </button>
+                                                {labourRows.length > 1 && (
+                                                    <button
+                                                        onClick={() => handleRemoveLabourRow(idx)}
+                                                        className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg transition"
+                                                        title="Delete Row"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
+
+                                        {row.isTextOnly ? (
+                                            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-sky-200 dark:border-sky-800/50 space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400">Note / Heading / Definition</label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleLabourRowChange(idx, 'isTextOnly', false)}
+                                                        className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 underline cursor-pointer"
+                                                    >
+                                                        Convert to crew task
+                                                    </button>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={row.workDescription || ''}
+                                                    onChange={(e) => handleLabourRowChange(idx, 'workDescription', e.target.value)}
+                                                    placeholder="Enter note, heading, terms, or specification..."
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Description of Work</label>
+                                                    <input
+                                                        type="text"
+                                                        value={row.workDescription}
+                                                        onChange={(e) => handleLabourRowChange(idx, 'workDescription', e.target.value)}
+                                                        placeholder="e.g. Masons, Certified Structural Welders, Erection Riggers"
+                                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Unit</label>
+                                                        <select
+                                                            value={row.unit || 'Days'}
+                                                            onChange={(e) => handleLabourRowChange(idx, 'unit', e.target.value)}
+                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                        >
+                                                            <option value="Days">Days</option>
+                                                            <option value="Shifts">Shifts</option>
+                                                            <option value="Hours">Hours</option>
+                                                            <option value="Units">Units</option>
+                                                            <option value="Trips">Trips</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Labour Count</label>
+                                                        <input
+                                                            type="number"
+                                                            value={row.labourersCount}
+                                                            onChange={(e) => handleLabourRowChange(idx, 'labourersCount', e.target.value)}
+                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Duration</label>
+                                                        <input
+                                                            type="number"
+                                                            value={row.workingDays}
+                                                            onChange={(e) => handleLabourRowChange(idx, 'workingDays', e.target.value)}
+                                                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Rate / Person (₹)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={row.dailyRate}
+                                                            onChange={(e) => handleLabourRowChange(idx, 'dailyRate', e.target.value)}
+                                                            disabled={row.isCombined}
+                                                            className={`w-full border rounded-xl px-2 py-1.5 text-xs font-bold focus:outline-none ${
+                                                                row.isCombined
+                                                                    ? 'bg-slate-100 dark:bg-slate-800 border-dashed text-slate-400'
+                                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
+                                                            }`}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
 
                                         {/* Combined Section Controls */}
                                         <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-amber-50/40 dark:bg-amber-950/20 p-2.5 rounded-xl">
@@ -1392,11 +1492,20 @@ const LabourBillsTab = () => {
                                                         </p>
                                                     </div>
                                                 )}
+                                                {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                    <p className="text-[11px] opacity-85 font-medium mt-0.5 print:text-[10px]">
+                                                        Web: {brandingSettings.website_url}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-1">
-                                                {billMode === 'transport' ? 'TRANSPORT BILL / LR' : billMode === 'labour' ? 'LABOUR BILL' : 'LABOUR & FREIGHT VOUCHER'}
+                                                {billMode === 'transport' 
+                                                    ? (brandingSettings?.doc_label_transport_bill || 'TRANSPORT BILL / LR') 
+                                                    : billMode === 'labour' 
+                                                        ? (brandingSettings?.doc_label_labour_bill || 'LABOUR BILL') 
+                                                        : (brandingSettings?.doc_label_labour_bill || 'LABOUR & FREIGHT VOUCHER')}
                                             </span>
                                             <p className="text-sm font-black">{billNumber}</p>
                                             <p className="text-xs opacity-80">Date: {billDate}</p>
@@ -1430,6 +1539,11 @@ const LabourBillsTab = () => {
                                             <p className="text-[11px] text-slate-400 font-medium mt-0.5">
                                                 Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835
                                             </p>
+                                            {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                <p className="text-[11px] text-slate-400 font-medium mt-0.5 print:text-[10px]">
+                                                    Web: {brandingSettings.website_url}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
@@ -1437,7 +1551,11 @@ const LabourBillsTab = () => {
                                             className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
                                             style={{ backgroundColor: themeColor }}
                                         >
-                                            {billMode === 'transport' ? 'GOODS FREIGHT RECEIPT' : billMode === 'labour' ? 'LABOUR CHARGES BILL' : 'LABOUR & TRANSPORT INVOICE'}
+                                            {billMode === 'transport' 
+                                                ? (brandingSettings?.doc_label_transport_bill || 'GOODS FREIGHT RECEIPT') 
+                                                : billMode === 'labour' 
+                                                    ? (brandingSettings?.doc_label_labour_bill || 'LABOUR CHARGES BILL') 
+                                                    : (brandingSettings?.doc_label_labour_bill || 'LABOUR & TRANSPORT INVOICE')}
                                         </span>
                                         <p className="text-xs font-black text-slate-900 dark:text-white">{billNumber}</p>
                                         <p className="text-xs text-slate-500">Date: {billDate}</p>
@@ -1524,6 +1642,19 @@ const LabourBillsTab = () => {
                                         </thead>
                                         <tbody className="text-xs font-medium text-slate-800 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
                                             {labourMeta.map((r, i) => {
+                                                if (r.isTextOnly || r.entryType === 'text') {
+                                                    const colSpan = 3 + (showQuantity ? 2 : 0) + (showUnitPrice ? 1 : 0);
+                                                    return (
+                                                        <tr key={r.id || i} className="bg-slate-50/80 dark:bg-slate-800/80 border-y border-slate-200 dark:border-slate-700">
+                                                            <td className="p-3 font-bold text-slate-400 text-center">{i + 1}</td>
+                                                            <td colSpan={colSpan - 1} className="p-3 text-left">
+                                                                <span className="font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide text-xs">
+                                                                    {r.workDescription || r.text || r.name || 'NOTE / SPECIFICATION'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
                                                 const lineTotal = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
                                                 return (
                                                     <tr key={r.id || i} className={i % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>

@@ -34,6 +34,27 @@ const Invoices = () => {
     const [workspaceViewMode, setWorkspaceViewMode] = useState('editor'); // 'editor' (default full width) | 'preview' | 'split'
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
+    // Document Type & Label Customization (Applies to all billing document types)
+    const [documentType, setDocumentType] = useState('Invoice');
+
+    const handleDocumentTypeChange = (newType) => {
+        setDocumentType(newType);
+        const year = new Date().getFullYear();
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        let prefix = 'INV';
+        if (newType === 'Quotation') prefix = 'QTN';
+        else if (newType === 'Estimate') prefix = 'EST';
+        else if (newType === 'Payment Receipt' || newType === 'Receipt') prefix = 'REC';
+        else if (newType === 'Sales Bill') prefix = 'SB';
+        else if (newType === 'Purchase Bill') prefix = 'PB';
+        else if (newType === 'Credit Note') prefix = 'CN';
+        else if (newType === 'Debit Note') prefix = 'DN';
+        else if (newType === 'Proforma Invoice') prefix = 'PI';
+        else if (newType === 'Delivery Challan') prefix = 'DC';
+
+        setInvoiceNumber(`${prefix}-${year}-${rand}`);
+    };
+
     // Form State
     const [invoiceNumber, setInvoiceNumber] = useState(generateInvoiceNumber());
     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
@@ -125,6 +146,34 @@ const Invoices = () => {
     const [invoiceNotes, setInvoiceNotes] = useState('Supplied as per standard certified structural fabrication specifications.');
     const [footerRemarks, setFooterRemarks] = useState('Krishna Engineering Works — Excellence in Pre-Engineered Buildings & Industrial Heavy Fabrication');
     const [brandingSettings, setBrandingSettings] = useState({ company_logo: '', company_signature: '' });
+
+    const documentTypeLabel = useMemo(() => {
+        if (documentType === 'Quotation' || documentType === 'Estimate') {
+            return brandingSettings?.doc_label_quotation || (documentType === 'Estimate' ? (brandingSettings?.doc_label_estimate || 'ESTIMATE') : 'QUOTATION');
+        }
+        if (documentType === 'Payment Receipt' || documentType === 'Receipt') {
+            return brandingSettings?.doc_label_receipt || 'PAYMENT RECEIPT';
+        }
+        if (documentType === 'Sales Bill' || documentType === 'Bill') {
+            return brandingSettings?.doc_label_sales_bill || 'SALES BILL';
+        }
+        if (documentType === 'Purchase Bill') {
+            return brandingSettings?.doc_label_purchase_bill || 'PURCHASE BILL';
+        }
+        if (documentType === 'Credit Note') {
+            return brandingSettings?.doc_label_credit_note || 'CREDIT NOTE';
+        }
+        if (documentType === 'Debit Note') {
+            return brandingSettings?.doc_label_debit_note || 'DEBIT NOTE';
+        }
+        if (documentType === 'Proforma Invoice') {
+            return brandingSettings?.doc_label_proforma_invoice || 'PROFORMA INVOICE';
+        }
+        if (documentType === 'Delivery Challan') {
+            return brandingSettings?.doc_label_delivery_challan || 'DELIVERY CHALLAN';
+        }
+        return brandingSettings?.doc_label_invoice || (showTax ? 'TAX INVOICE' : 'INVOICE');
+    }, [documentType, brandingSettings, showTax]);
 
     // UPI & Bank Settlement Customization
     const [invoiceUpiId, setInvoiceUpiId] = useState('');
@@ -485,6 +534,50 @@ const Invoices = () => {
             ...prev,
             { id: Date.now() + Math.random(), name: '', description: '', price: 0, rate: 0, quantity: 1, unit: 'Units', hasQuantity: true, hasUnitPrice: true, isCombined: false }
         ]);
+    };
+
+    const handleAddTextEntry = () => {
+        setItems(prev => [
+            ...prev,
+            { 
+                id: Date.now() + Math.random(), 
+                name: '', 
+                description: '', 
+                text: '', 
+                isTextOnly: true, 
+                entryType: 'text', 
+                price: 0, 
+                rate: 0, 
+                quantity: 0, 
+                total: 0, 
+                unit: '', 
+                hasQuantity: false, 
+                hasUnitPrice: false, 
+                isCombined: false 
+            }
+        ]);
+    };
+
+    const handleMoveItemUp = (index) => {
+        if (index <= 0) return;
+        setItems(prev => {
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index - 1];
+            next[index - 1] = item;
+            return synchronizeItemSections ? synchronizeItemSections(next) : next;
+        });
+    };
+
+    const handleMoveItemDown = (index) => {
+        setItems(prev => {
+            if (index >= prev.length - 1) return prev;
+            const next = [...prev];
+            const item = next[index];
+            next[index] = next[index + 1];
+            next[index + 1] = item;
+            return synchronizeItemSections ? synchronizeItemSections(next) : next;
+        });
     };
 
     const handleAddNewCombinedSection = () => {
@@ -942,7 +1035,7 @@ const Invoices = () => {
             const isDbObjectId = selectedCustomerId && typeof selectedCustomerId === 'string' && selectedCustomerId.length === 24 && /^[0-9a-fA-F]{24}$/.test(selectedCustomerId);
 
             const payload = {
-                documentType: 'Invoice',
+                documentType: documentType || 'Invoice',
                 documentNumber: invoiceNumber,
                 customerId: isDbObjectId ? selectedCustomerId : undefined,
                 status: status || 'Unpaid',
@@ -954,7 +1047,7 @@ const Invoices = () => {
             if (!autoSilent) {
                 localStorage.removeItem(DRAFT_STORAGE_KEY);
                 setRecoveredDraft(null);
-                setSaveMessage(`✅ Invoice #${invoiceNumber} saved to Document History (Version ${res.data.document?.version || 1}).`);
+                setSaveMessage(`✅ ${documentTypeLabel} #${invoiceNumber} saved to Document History (Version ${res.data.document?.version || 1}).`);
                 setTimeout(() => setSaveMessage(''), 4000);
             } else {
                 setLastAutoSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -1084,9 +1177,29 @@ const Invoices = () => {
                             </span>
                         )}
                     </div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
-                        {showTax ? 'Tax Invoice Studio' : 'Invoice Studio'}
-                    </h1>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                            {documentTypeLabel} Studio
+                        </h1>
+                        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 w-fit">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 px-1.5">Type:</span>
+                            <select
+                                value={documentType}
+                                onChange={(e) => handleDocumentTypeChange(e.target.value)}
+                                className="bg-white dark:bg-slate-900 border-0 rounded-lg px-2.5 py-1 text-xs font-black text-indigo-600 dark:text-indigo-400 focus:outline-none shadow-xs cursor-pointer"
+                            >
+                                <option value="Invoice">Tax Invoice / Invoice</option>
+                                <option value="Proforma Invoice">Proforma Invoice</option>
+                                <option value="Sales Bill">Sales Bill</option>
+                                <option value="Purchase Bill">Purchase Bill</option>
+                                <option value="Payment Receipt">Payment Receipt</option>
+                                <option value="Credit Note">Credit Note</option>
+                                <option value="Debit Note">Debit Note</option>
+                                <option value="Delivery Challan">Delivery Challan</option>
+                                <option value="Quotation">Quotation / Estimate</option>
+                            </select>
+                        </div>
+                    </div>
                     {saveMessage && (
                         <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 inline-block">
                             {saveMessage}
@@ -1612,6 +1725,9 @@ const Invoices = () => {
                             onToggleEnableQuantity={(val) => setShowQuantity(val)}
                             onUpdateItem={handleUpdateItem}
                             onAddItem={handleAddItem}
+                            onAddTextEntry={handleAddTextEntry}
+                            onMoveItemUp={handleMoveItemUp}
+                            onMoveItemDown={handleMoveItemDown}
                             onAddNewCombinedSection={handleAddNewCombinedSection}
                             onRemoveItem={handleRemoveItem}
                             onToggleCombine={handleToggleCombine}
@@ -1996,7 +2112,7 @@ const Invoices = () => {
                                 disabled={savingHistory}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition"
                             >
-                                <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : 'Save Invoice'}
+                                <Save className="w-4 h-4" /> {savingHistory ? 'Saving...' : `Save ${documentType || 'Invoice'}`}
                             </button>
                         </div>
                     </div>
@@ -2130,11 +2246,16 @@ const Invoices = () => {
                                                         </p>
                                                     </div>
                                                 )}
+                                                {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                    <p className="text-[11px] opacity-85 font-medium mt-0.5 print:text-[10px]">
+                                                        Web: {brandingSettings.website_url}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
                                             <span className="bg-white/20 backdrop-blur px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest inline-block mb-2 text-white border border-white/20 shadow-xs">
-                                                {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                                {documentTypeLabel}
                                             </span>
                                             {effectiveHeadings.length > 0 && (
                                                 <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end mb-1.5">
@@ -2227,6 +2348,11 @@ const Invoices = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                            {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 print:text-[10px]">
+                                                    Web: {brandingSettings.website_url}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
@@ -2234,7 +2360,7 @@ const Invoices = () => {
                                             className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
                                             style={{ backgroundColor: themeColor || '#4f46e5' }}
                                         >
-                                            {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                            {documentTypeLabel}
                                         </span>
                                         {effectiveHeadings.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end mb-1.5">
@@ -2328,6 +2454,11 @@ const Invoices = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                            {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
+                                                <p className="text-[11px] text-slate-400 font-medium mt-0.5 print:text-[10px]">
+                                                    Web: {brandingSettings.website_url}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-left sm:text-right">
@@ -2335,7 +2466,7 @@ const Invoices = () => {
                                             className="px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest text-white inline-block mb-2 shadow-sm"
                                             style={{ backgroundColor: themeColor || '#4f46e5' }}
                                         >
-                                            {showTax ? 'TAX INVOICE' : 'INVOICE'}
+                                            {documentTypeLabel}
                                         </span>
                                         {effectiveHeadings.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5 justify-start sm:justify-end mb-2">
