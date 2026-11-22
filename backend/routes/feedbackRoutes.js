@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const feedbackController = require('../controllers/feedbackController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin, optionalProtect } = require('../middleware/authMiddleware');
 
-// Public route to submit internal feedback
-router.post('/', feedbackController.submitFeedback);
+// Route to submit feedback (supports both authenticated customers and public guests)
+router.post('/', optionalProtect, feedbackController.submitFeedback);
 
-// Admin-only route to inspect internal feedback
+// Customer-only route to inspect their own submitted feedback
+router.get('/my-feedback', protect, feedbackController.getMyFeedback);
+
+// Admin-only route to inspect all internal feedback
 router.get('/', protect, admin, feedbackController.getFeedbacks);
 
 module.exports = router;

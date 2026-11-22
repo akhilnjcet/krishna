@@ -1,6 +1,10 @@
 const Feedback = require('../models/Feedback');
 
-// Public: Submit internal website feedback with user consent
+/**
+ * Submit feedback / customer review
+ * Works for both authenticated customers (associating with their account)
+ * and public website visitors.
+ */
 exports.submitFeedback = async (req, res) => {
   try {
     const {
@@ -9,11 +13,12 @@ exports.submitFeedback = async (req, res) => {
       services,
       customerName,
       customerPhone,
+      customerEmail,
       consentGiven,
       openedGoogleReview
     } = req.body;
 
-    // Consent validation
+    // Consent check
     if (consentGiven === false) {
       return res.status(200).json({
         success: true,
@@ -21,39 +26,103 @@ exports.submitFeedback = async (req, res) => {
       });
     }
 
+    // Server-side Rating validation (Strict 1-5 integer)
     const numericRating = Number(rating);
-    if (!numericRating || numericRating < 1 || numericRating > 5) {
+    if (!numericRating || !Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid rating between 1 and 5 stars.'
+        message: 'Please select a valid star rating between 1 and 5 stars.'
+      });
+    }
+
+    // Sanitize written feedback (max 2000 chars)
+    const sanitizedComment = typeof comment === 'string' ? comment.trim().slice(0, 2000) : '';
+
+    // Sanitize services (array of strings, max 20)
+    let sanitizedServices = [];
+    if (Array.isArray(services)) {
+      sanitizedServices = services
+        .map(s => String(s || '').trim())
+        .filter(s => s.length > 0 && s.length <= 100)
+        .slice(0, 20);
+    }
+
+    // Determine customer association
+    let customerId = null;
+    let finalCustomerName = '';
+    let finalCustomerEmail = '';
+    let finalCustomerPhone = '';
+    let source = 'Website Review Form';
+
+    if (req.user) {
+      customerId = req.user._id || req.user.id;
+      finalCustomerName = (req.user.name || '').trim() || 'Valued Customer';
+      finalCustomerEmail = (req.user.email || '').trim().toLowerCase();
+      finalCustomerPhone = (req.user.phone || '').trim();
+      source = 'Customer Portal Review';
+    } else {
+      finalCustomerName = typeof customerName === 'string' ? customerName.trim().slice(0, 100) : 'Anonymous Customer';
+      if (!finalCustomerName) finalCustomerName = 'Anonymous Customer';
+      finalCustomerEmail = typeof customerEmail === 'string' ? customerEmail.trim().toLowerCase().slice(0, 100) : '';
+      finalCustomerPhone = typeof customerPhone === 'string' ? customerPhone.trim().slice(0, 30) : '';
+    }
+
+    // Duplicate submission check: prevent identical feedback within 30 seconds
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
+    const duplicateQuery = {
+      createdAt: { $gte: thirtySecondsAgo },
+      rating: numericRating,
+      comment: sanitizedComment
+    };
+
+    if (customerId) {
+      duplicateQuery.customer = customerId;
+    } else if (finalCustomerEmail) {
+      duplicateQuery.customerEmail = finalCustomerEmail;
+    } else if (finalCustomerPhone) {
+      duplicateQuery.customerPhone = finalCustomerPhone;
+    }
+
+    const recentDuplicate = await Feedback.findOne(duplicateQuery);
+    if (recentDuplicate) {
+      return res.status(409).json({
+        success: false,
+        message: 'Your review was already submitted a moment ago. Thank you!'
       });
     }
 
     const feedback = new Feedback({
+      customer: customerId,
       rating: numericRating,
-      comment: (comment || '').trim().slice(0, 2000),
-      services: Array.isArray(services) ? services.map(s => String(s).trim()) : [],
-      customerName: (customerName || '').trim() || 'Anonymous Customer',
-      customerPhone: (customerPhone || '').trim(),
+      comment: sanitizedComment,
+      services: sanitizedServices,
+      customerName: finalCustomerName,
+      customerEmail: finalCustomerEmail,
+      customerPhone: finalCustomerPhone,
       consentGiven: consentGiven !== false,
       openedGoogleReview: Boolean(openedGoogleReview),
-      source: 'Website Review Form'
+      source,
+      status: 'received'
     });
 
     await feedback.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: 'Feedback received successfully. Thank you for helping us improve!',
+      message: 'Thank you for your valuable feedback! It has been successfully saved.',
       feedback: {
         id: feedback._id,
         rating: feedback.rating,
+        comment: feedback.comment,
+        services: feedback.services,
+        customerName: feedback.customerName,
+        source: feedback.source,
         createdAt: feedback.createdAt
       }
     });
   } catch (err) {
     console.error('Error submitting feedback:', err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to record feedback. Please try again.',
       error: err.message
@@ -61,7 +130,42 @@ exports.submitFeedback = async (req, res) => {
   }
 };
 
-// Admin: Get all feedback with aggregate stats
+/**
+ * Get authenticated customer's own submitted feedbacks
+ * GET /api/feedback/my-feedback
+ */
+exports.getMyFeedback = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Customer authentication required to view feedback history.'
+      });
+    }
+
+    const feedbacks = await Feedback.find({ customer: req.user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      count: feedbacks.length,
+      feedbacks
+    });
+  } catch (err) {
+    console.error('Error fetching customer feedback:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve your feedback history.',
+      error: err.message
+    });
+  }
+};
+
+/**
+ * Admin: Get all feedback with aggregate statistics
+ * GET /api/feedback
+ */
 exports.getFeedbacks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -70,6 +174,7 @@ exports.getFeedbacks = async (req, res) => {
 
     const [feedbacks, total, stats] = await Promise.all([
       Feedback.find()
+        .populate('customer', 'name email phone role')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -101,7 +206,7 @@ exports.getFeedbacks = async (req, res) => {
       oneStars: 0
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       feedbacks,
       total,
@@ -111,7 +216,7 @@ exports.getFeedbacks = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching feedbacks:', err);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to retrieve feedback.',
       error: err.message

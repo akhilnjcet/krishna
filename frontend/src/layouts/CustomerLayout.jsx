@@ -3,7 +3,7 @@ import { Outlet, Navigate, Link, useLocation, useNavigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Layers, BookOpen, FileText,
-    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home, Briefcase, CheckCircle
+    MessageSquare, HelpCircle, User, LogOut, Bell, Menu, X, ChevronLeft, Wallet, Home, Briefcase, CheckCircle, Star
 } from 'lucide-react';
 import useAuthStore from '../stores/authStore';
 import ThemeToggle from '../components/ThemeToggle';
@@ -17,6 +17,7 @@ const navItems = [
     { name: 'My Projects', path: '/customer/projects', icon: Briefcase },
     { name: 'My Applications', path: '/customer/quotes', icon: Layers },
     { name: 'My Payments', path: '/customer/payments', icon: Wallet },
+    { name: 'Reviews & Feedback', path: '/customer/reviews', icon: Star },
     { name: 'Intelligence Feed', path: '/blog', icon: BookOpen },
     { name: 'Formal Quote Request', path: '/quote', icon: FileText },
     { name: 'Technical Support', path: '/customer/support', icon: MessageSquare },

@@ -136,6 +136,7 @@ const CustomerQuotes = lazy(() => import('./pages/customer/CustomerQuotes'));
 const InvoiceView = lazy(() => import('./pages/customer/InvoiceView'));
 const CustomerPayments = lazy(() => import('./pages/customer/CustomerPayments'));
 const CustomerProjects = lazy(() => import('./pages/customer/CustomerProjects'));
+const CustomerReviews = lazy(() => import('./pages/customer/CustomerReviews'));
 
 // Components
 import AIChatWidget from './components/AIChatWidget';
@@ -677,6 +678,7 @@ const App = () => {
               <Route path="quotes" element={<CustomerQuotes />} />
               <Route path="invoice/:id" element={<InvoiceView />} />
               <Route path="payments" element={<CustomerPayments />} />
+              <Route path="reviews" element={<CustomerReviews />} />
               <Route path="support" element={<SupportHub />} />
               <Route path="profile" element={<Profile />} />
             </Route>

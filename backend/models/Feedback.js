@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const feedbackSchema = new mongoose.Schema({
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+    index: true
+  },
   rating: {
     type: Number,
     required: true,
@@ -10,7 +16,8 @@ const feedbackSchema = new mongoose.Schema({
   comment: {
     type: String,
     trim: true,
-    default: ''
+    default: '',
+    maxlength: 2000
   },
   services: [{
     type: String,
@@ -19,7 +26,13 @@ const feedbackSchema = new mongoose.Schema({
   customerName: {
     type: String,
     trim: true,
-    default: 'Anonymous Customer'
+    default: 'Valued Customer'
+  },
+  customerEmail: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: ''
   },
   customerPhone: {
     type: String,
@@ -32,7 +45,7 @@ const feedbackSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    default: 'Website Review Form'
+    default: 'Customer Portal Review'
   },
   openedGoogleReview: {
     type: Boolean,
@@ -44,5 +57,7 @@ const feedbackSchema = new mongoose.Schema({
     default: 'received'
   }
 }, { timestamps: true });
+
+feedbackSchema.index({ customer: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Feedback', feedbackSchema);

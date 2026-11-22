@@ -28,7 +28,7 @@ const RATING_LABELS = {
 };
 
 const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
-    const [rating, setRating] = useState(5);
+    const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
     const [selectedServices, setSelectedServices] = useState([]);
@@ -76,23 +76,26 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
     const handlePostToGoogle = async () => {
         setErrorMsg(null);
 
+        if (!rating || rating < 1 || rating > 5) {
+            setErrorMsg('Please select a star rating (1 to 5 stars) before proceeding to Google.');
+            return;
+        }
+
         // Copy review text to clipboard if user wrote something
         if (comment.trim()) {
             await copyReviewText();
         }
 
         // Record review event in backend
-        if (rating) {
-            try {
-                api.post('/feedback', {
-                    rating,
-                    comment,
-                    services: selectedServices,
-                    openedGoogleReview: true
-                }).catch(e => console.warn('Internal feedback sync notice:', e));
-            } catch (_err) {
-                void _err;
-            }
+        try {
+            api.post('/feedback', {
+                rating,
+                comment,
+                services: selectedServices,
+                openedGoogleReview: true
+            }).catch(e => console.warn('Internal feedback sync notice:', e));
+        } catch (_err) {
+            void _err;
         }
 
         // Open Google's official review page in a new window/tab
@@ -106,6 +109,12 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
     const handleSubmitInternalOnly = async (e) => {
         e?.preventDefault();
         setErrorMsg(null);
+
+        if (!rating || rating < 1 || rating > 5) {
+            setErrorMsg('Please select a star rating (1 to 5 stars) before submitting.');
+            return;
+        }
+
         setSubmittingInternal(true);
 
         try {
@@ -117,12 +126,33 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
             });
 
             setInternalSuccess('Thank you! Your feedback has been safely shared with the Krishna Engineering team.');
+            setRating(0);
+            setComment('');
+            setSelectedServices([]);
             setTimeout(() => setInternalSuccess(null), 6000);
         } catch (err) {
             console.error('Failed to submit internal feedback:', err);
             setErrorMsg(err.response?.data?.message || 'Could not record feedback. Please try again.');
         } finally {
             setSubmittingInternal(false);
+        }
+    };
+
+    const handleStarKeyDown = (e, starValue) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const next = Math.min(5, (rating || starValue) + 1);
+            setRating(next);
+            setErrorMsg(null);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const prev = Math.max(1, (rating || starValue) - 1);
+            setRating(prev);
+            setErrorMsg(null);
+        } else if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            setRating(starValue);
+            setErrorMsg(null);
         }
     };
 
@@ -199,22 +229,35 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
                         </label>
                         
                         <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4">
-                            <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                            <div 
+                                role="radiogroup"
+                                aria-label="Star rating out of 5 stars"
+                                className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button
                                         key={star}
                                         type="button"
-                                        onClick={() => setRating(star)}
+                                        role="radio"
+                                        aria-checked={rating === star}
+                                        tabIndex={rating === star || (!rating && star === 1) ? 0 : -1}
+                                        onClick={() => {
+                                            setRating(star);
+                                            setErrorMsg(null);
+                                        }}
                                         onMouseEnter={() => setHoverRating(star)}
                                         onMouseLeave={() => setHoverRating(0)}
-                                        className="p-1 sm:p-2 rounded-xl transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                        onKeyDown={(e) => handleStarKeyDown(e, star)}
+                                        className={`p-1 sm:p-2 rounded-xl transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+                                            rating === star ? 'ring-2 ring-amber-400/60 bg-amber-50 dark:bg-amber-950/40' : ''
+                                        }`}
                                         aria-label={`Rate ${star} out of 5 stars`}
                                     >
                                         <Star 
                                             className={`w-7 h-7 sm:w-8 sm:h-8 transition-colors ${
                                                 star <= activeRating 
                                                     ? 'fill-amber-400 text-amber-400 drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]' 
-                                                    : 'text-slate-300 dark:text-slate-600 hover:text-amber-200'
+                                                     : 'text-slate-300 dark:text-slate-600 hover:text-amber-200'
                                             }`} 
                                         />
                                     </button>
@@ -223,10 +266,10 @@ const GoogleReviewSection = ({ className = '', id = 'rate-our-work' }) => {
 
                             <div className="text-center sm:text-left">
                                 <span className="text-sm font-extrabold text-slate-900 dark:text-white block">
-                                    {RATING_LABELS[activeRating] || 'Click stars to rate'}
+                                    {RATING_LABELS[activeRating] || 'Click stars to select rating'}
                                 </span>
                                 <span className="text-[11px] text-slate-400">
-                                    {rating} of 5 Stars Selected
+                                    {rating > 0 ? `${rating} of 5 Stars Selected` : 'No rating selected (Required)'}
                                 </span>
                             </div>
                         </div>
