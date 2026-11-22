@@ -939,10 +939,12 @@ const Invoices = () => {
                 brandingSettings
             };
 
+            const isDbObjectId = selectedCustomerId && typeof selectedCustomerId === 'string' && selectedCustomerId.length === 24 && /^[0-9a-fA-F]{24}$/.test(selectedCustomerId);
+
             const payload = {
                 documentType: 'Invoice',
                 documentNumber: invoiceNumber,
-                customerId: selectedCustomerId || undefined,
+                customerId: isDbObjectId ? selectedCustomerId : undefined,
                 status: status || 'Unpaid',
                 totalAmount: financials.grandTotal,
                 data: fullInvoiceData

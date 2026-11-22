@@ -16,9 +16,9 @@ const documentHistorySchema = new mongoose.Schema({
         required: true, 
         enum: [
             // Standard generated documents
-            'Quotation', 'Estimate', 'Invoice', 'Labour Bill', 'Transport Bill', 'Rental Bill', 'Salary Slip',
+            'Quotation', 'Estimate', 'Invoice', 'Tax Invoice', 'Labour Bill', 'Transport Bill', 'Rental Bill', 'Salary Slip',
             'Attendance Report', 'Purchase Bill', 'Expense Report', 'Payment Receipt',
-            'Project Report', 'General Report',
+            'Project Report', 'General Report', 'LetterPad', 'Digital LetterPad', 'Delivery Challan',
             'Lodge Rent Bill', 'Booking Confirmation', 'Advance Payment',
             // Industrial Business Documents
             'Customer Documents',
@@ -52,6 +52,11 @@ const documentHistorySchema = new mongoose.Schema({
         ref: 'User',
         default: null,
         index: true 
+    },
+    manualCustomerId: {
+        type: String,
+        default: '',
+        index: true
     },
     projectId: { 
         type: mongoose.Schema.Types.ObjectId, 

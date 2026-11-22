@@ -565,10 +565,12 @@ const Quotations = () => {
 
         if (triggeredBy !== 'autosave') setSaveState('saving');
         try {
+            const isDbObjectId = selectedCustomerId && typeof selectedCustomerId === 'string' && selectedCustomerId.length === 24 && /^[0-9a-fA-F]{24}$/.test(selectedCustomerId);
+
             const payload = {
                 documentType: 'Quotation',
                 documentNumber: quotationNumber.trim(),
-                customerId: selectedCustomerId || undefined,
+                customerId: isDbObjectId ? selectedCustomerId : undefined,
                 status: 'Draft',
                 totalAmount: financials.grandTotal,
                 preparedBy: user?.name || '',

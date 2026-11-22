@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const DocumentHistory = require('../models/DocumentHistory');
 const User = require('../models/User');
 const Project = require('../models/Project');
@@ -13,10 +14,12 @@ exports.saveDocument = async (req, res) => {
             status,
             totalAmount,
             data,
-            pdfData
+            pdfData,
+            preparedBy,
+            title
         } = req.body;
 
-        const createdBy = req.user ? req.user.id : null;
+        const createdBy = req.user ? (req.user._id || req.user.id) : null;
         if (!createdBy) {
             return res.status(401).json({ message: 'Authentication required to save document history.' });
         }
@@ -26,17 +29,54 @@ exports.saveDocument = async (req, res) => {
             return res.status(403).json({ message: 'Access denied: You are not authorized to save document history.' });
         }
 
+        const cleanDocType = String(documentType || 'Invoice').trim();
+        const cleanDocNum = String(documentNumber || '').trim();
+
+        if (!cleanDocNum) {
+            return res.status(400).json({ message: 'Document number is required.' });
+        }
+
+        // Safely validate and convert customerId (prevents Mongoose CastError on manual_cust_* strings)
+        let validCustomerId = null;
+        let manualCustomerId = '';
+        if (customerId) {
+            const strCustId = String(customerId).trim();
+            if (mongoose.Types.ObjectId.isValid(strCustId) && /^[0-9a-fA-F]{24}$/.test(strCustId)) {
+                validCustomerId = new mongoose.Types.ObjectId(strCustId);
+            } else {
+                manualCustomerId = strCustId;
+            }
+        }
+
+        // Safely validate and convert projectId
+        let validProjectId = null;
+        if (projectId) {
+            const strProjId = String(projectId).trim();
+            if (mongoose.Types.ObjectId.isValid(strProjId) && /^[0-9a-fA-F]{24}$/.test(strProjId)) {
+                validProjectId = new mongoose.Types.ObjectId(strProjId);
+            }
+        }
+
+        const numericAmount = (totalAmount !== undefined && !isNaN(Number(totalAmount))) ? Number(totalAmount) : 0;
+
         // Check if document already exists
-        let document = await DocumentHistory.findOne({ documentType, documentNumber });
+        let document = await DocumentHistory.findOne({ 
+            documentType: cleanDocType, 
+            documentNumber: cleanDocNum 
+        });
 
         if (document) {
             // Versioning: If changes are found or a new PDF is saved, archive the current version
-            const nextVersionNum = document.version + 1;
+            const nextVersionNum = (document.version || 1) + 1;
             
+            if (!Array.isArray(document.versions)) {
+                document.versions = [];
+            }
+
             // Push current state to versions history
             document.versions.push({
-                version: document.version,
-                data: document.data,
+                version: document.version || 1,
+                data: document.data || {},
                 pdfData: document.pdfData,
                 updatedBy: createdBy,
                 updatedAt: Date.now()
@@ -44,14 +84,19 @@ exports.saveDocument = async (req, res) => {
 
             // Update main document fields with the new version
             document.version = nextVersionNum;
-            document.data = data;
+            document.data = data || {};
             if (pdfData) {
                 document.pdfData = pdfData;
             }
-            if (customerId) document.customerId = customerId;
-            if (projectId) document.projectId = projectId;
-            if (status) document.status = status;
-            if (totalAmount !== undefined) document.totalAmount = totalAmount;
+            document.customerId = validCustomerId;
+            if (manualCustomerId) {
+                document.manualCustomerId = manualCustomerId;
+            }
+            document.projectId = validProjectId;
+            if (status) document.status = String(status).trim();
+            document.totalAmount = numericAmount;
+            if (preparedBy) document.preparedBy = String(preparedBy).trim();
+            if (title) document.title = String(title).trim();
             document.updatedAt = Date.now();
 
             await document.save();
@@ -59,16 +104,20 @@ exports.saveDocument = async (req, res) => {
         } else {
             // Create a new document history
             const newDocument = new DocumentHistory({
-                documentType,
-                documentNumber,
-                customerId: customerId || null,
-                projectId: projectId || null,
+                documentType: cleanDocType,
+                documentNumber: cleanDocNum,
+                customerId: validCustomerId,
+                manualCustomerId,
+                projectId: validProjectId,
                 createdBy,
-                status: status || 'Draft',
-                totalAmount: totalAmount || 0,
+                createdByName: req.user?.name || req.user?.email || 'Administrator',
+                status: status ? String(status).trim() : 'Draft',
+                totalAmount: numericAmount,
                 version: 1,
-                data,
-                pdfData
+                data: data || {},
+                pdfData,
+                preparedBy: preparedBy ? String(preparedBy).trim() : '',
+                title: title ? String(title).trim() : ''
             });
 
             await newDocument.save();
