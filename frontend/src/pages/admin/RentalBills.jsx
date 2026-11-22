@@ -1443,11 +1443,11 @@ const RentalBills = () => {
 
                         <div 
                             id="rental-bill-print-container"
-                            className="print-document-container bg-white dark:bg-slate-900 w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-8 md:p-10 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between"
+                            className="print-document-container bg-white dark:bg-slate-900 w-full max-w-[210mm] mx-auto p-6 sm:p-8 md:p-10 shadow-2xl rounded-b-3xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans block print:!block print:!p-0 print:!m-0 print:!border-none print:!shadow-none"
                             style={{ '--theme-color': themeColor }}
                         >
                             {/* TOP DOCUMENT SECTION */}
-                            <div className="flex-1 flex flex-col">
+                            <div className="w-full">
                                 {/* Header */}
                             {theme === 'Modern' ? (
                                 <div className="p-6 md:p-8 rounded-2xl mb-8 text-white relative overflow-hidden" style={{ backgroundColor: themeColor }}>
@@ -1548,7 +1548,7 @@ const RentalBills = () => {
                             <SpecialClassificationBanner items={specialClassifications} />
 
                             {/* Equipment Table */}
-                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 print:overflow-visible print:mb-3 print:border-slate-300">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="text-[10px] font-black uppercase tracking-wider text-white" style={{ backgroundColor: themeColor }}>
@@ -1611,7 +1611,7 @@ const RentalBills = () => {
                             </div>
 
                             {/* BOTTOM DOCUMENT SECTION (Settlement & Signatures) */}
-                            <div className="mt-auto pt-4 break-inside-avoid">
+                            <div className="w-full mt-6 pt-2 invoice-bottom-section break-inside-avoid">
                                 {/* Financial Settlement Summary (Compact Right-Aligned under equipment items) */}
                                 <div className="flex justify-end mb-4 border-b border-slate-200 dark:border-slate-700 pb-3">
                                     <div className="w-full sm:w-80 max-w-md space-y-1.5 text-xs print:w-72">

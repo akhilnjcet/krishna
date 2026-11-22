@@ -218,13 +218,21 @@ export const exportCleanDocumentPDF = async (containerId, fileName = 'document.p
                 }
             });
 
-            // 5. Container sizing: remove fixed min-height so short invoices aren't forced into giant blank box
-            clonedContainer.style.minHeight = 'auto';
+            // 5. Container sizing: remove fixed/min heights and flex-stretching so invoices flow naturally without artificial blank space
+            clonedContainer.style.display = 'block';
+            clonedContainer.style.minHeight = '0';
             clonedContainer.style.height = 'auto';
             clonedContainer.style.boxShadow = 'none';
             clonedContainer.style.border = 'none';
             clonedContainer.style.borderRadius = '0';
             clonedContainer.style.backgroundColor = '#ffffff';
+
+            clonedContainer.querySelectorAll('.flex-1, [class*="flex-1"]').forEach(el => {
+                el.style.flex = 'none';
+            });
+            clonedContainer.querySelectorAll('.mt-auto, [class*="mt-auto"]').forEach(el => {
+                el.style.marginTop = '1.5rem';
+            });
         }
     });
 

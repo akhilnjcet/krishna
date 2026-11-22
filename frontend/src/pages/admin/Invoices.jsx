@@ -2053,13 +2053,13 @@ const Invoices = () => {
                         id="invoice-print-container"
                         className={`print-document-container bg-white dark:bg-slate-900 ${
                             workspaceViewMode !== 'split' 
-                                ? 'w-full max-w-[210mm] min-h-[297mm] mx-auto p-6 sm:p-10 md:p-12 shadow-2xl rounded-b-3xl' 
+                                ? 'w-full max-w-[210mm] mx-auto p-6 sm:p-10 md:p-12 shadow-2xl rounded-b-3xl' 
                                 : 'p-3.5 sm:p-6 shadow-2xl rounded-b-3xl'
-                        } border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans flex flex-col justify-between`}
+                        } border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-sans block print:!block print:!p-0 print:!m-0 print:!border-none print:!shadow-none`}
                         style={{ '--theme-color': themeColor }}
                     >
                             {/* TOP DOCUMENT SECTION */}
-                            <div className="flex-1 flex flex-col">
+                            <div className="w-full">
                                 {/* Header */}
                             {theme === 'Modern' ? (
                                 <div 
@@ -2395,7 +2395,7 @@ const Invoices = () => {
                             <SpecialClassificationBanner items={specialClassifications} />
 
                             {/* Invoice Table with Curly Brace Combined Billing */}
-                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+                            <div className="mb-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm print:overflow-visible print:mb-3 print:border-slate-300">
                                 <table className="w-full text-left border-collapse min-w-[460px] sm:min-w-full">
                                     <thead>
                                         <tr 
@@ -2423,7 +2423,7 @@ const Invoices = () => {
                             </div>
 
                             {/* BOTTOM DOCUMENT SECTION (Summary, Totals, QR, Terms, Signatures, Footer) */}
-                            <div className="mt-auto pt-4 break-inside-avoid">
+                            <div className="w-full mt-6 pt-2 invoice-bottom-section break-inside-avoid">
                                 {/* Summary & QR Code Block */}
                             <div className={`flex flex-col ${workspaceViewMode !== 'split' ? 'lg:flex-row' : ''} justify-between items-start gap-6 mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 print:flex-row print:justify-between print:gap-4`}>
                                 <div className="w-full flex-1 min-w-0 space-y-4">
