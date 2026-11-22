@@ -371,7 +371,6 @@ button {
     color: #0f172a !important;
     overflow: visible !important;
     transform: none !important;
-    zoom: 1 !important;
   }
 
   /* Natural block flow in print mode - prevent flex-stretching */

@@ -1491,7 +1491,7 @@ const RentalBills = () => {
                                             <img src={brandingSettings.company_logo} alt="Company Logo" className="h-12 w-auto object-contain bg-white dark:bg-slate-900 rounded-xl shadow p-1" />
                                         )}
                                         <div>
-                                            <h1 className="text-lg md:text-xl font-black uppercase tracking-tighter text-slate-900 dark:text-white company-name">
+                                            <h1 className="text-lg md:text-xl font-bold uppercase tracking-normal text-slate-900 dark:text-white company-name">
                                                 {brandingSettings?.company_name || 'KRISHNA ENGINEERING WORKS'}
                                             </h1>
                                             {showTagline && (

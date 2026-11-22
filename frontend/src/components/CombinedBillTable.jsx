@@ -124,13 +124,9 @@ export const CombinedBillTableBody = ({
                 textAlign: 'left'
               }}
             >
-              <div style={{ fontWeight: '700', color: textColor }}>
-                {itemName}
-              </div>
+              <div style={{ fontWeight: '700', color: textColor, wordBreak: 'normal' }}>{itemName}</div>
               {meta.description && meta.description !== itemName && (
-                <div style={{ fontSize: '0.725rem', color: '#64748B', marginTop: '1px' }}>
-                  {meta.description}
-                </div>
+                <div style={{ fontSize: '0.725rem', color: '#64748B', marginTop: '2px', wordBreak: 'normal' }}>{meta.description}</div>
               )}
             </td>
 
