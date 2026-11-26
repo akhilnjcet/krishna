@@ -574,6 +574,27 @@ const AdminSettings = () => {
                                             Show Company GSTIN on Invoices & Documents by default
                                         </label>
                                     </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
+                                            <Globe className="w-3 h-3 text-cyan-500" /> Company Website URL
+                                        </label>
+                                        <input 
+                                            value={settings.website_url || ''}
+                                            onChange={(e) => updateField('website_url', e.target.value)}
+                                            placeholder="e.g. https://krishnaengineering.vercel.app"
+                                            className="w-full bg-white dark:bg-[#0a0a0c] border border-slate-300 dark:border-white/10 rounded-xl p-4 text-sm font-black text-cyan-600 dark:text-cyan-400 outline-none focus:border-cyan-500/50 shadow-sm transition-all"
+                                        />
+                                        <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-gray-300 cursor-pointer pt-1">
+                                            <input 
+                                                type="checkbox"
+                                                checked={settings.show_website_url !== false && settings.show_website_url !== 'false'}
+                                                onChange={(e) => updateField('show_website_url', e.target.checked)}
+                                                className="rounded border-slate-300 text-cyan-600"
+                                            />
+                                            Show Company Website on Invoices & Documents by default
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

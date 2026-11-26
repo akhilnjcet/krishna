@@ -86,6 +86,8 @@ const RentalBills = () => {
     // Tagline & Header Customization
     const [tagline, setTagline] = useState('Equipment Rental, Machinery Leasing & Plant Asset Services');
     const [showTagline, setShowTagline] = useState(true);
+    const [companyWebsite, setCompanyWebsite] = useState('');
+    const [showCompanyWebsite, setShowCompanyWebsite] = useState(true);
 
     // Rented Items / Assets
     const [rentedItems, setRentedItems] = useState([
@@ -166,6 +168,12 @@ const RentalBills = () => {
                 setBrandingSettings(map);
                 if (map.company_tagline || map.tagline) {
                     setTagline(prev => (prev === 'Equipment Rental, Machinery Leasing & Plant Asset Services' ? (map.company_tagline || map.tagline) : prev));
+                }
+                if (map.website_url) {
+                    setCompanyWebsite(prev => prev || map.website_url);
+                }
+                if (map.show_website_url !== undefined) {
+                    setShowCompanyWebsite(map.show_website_url !== false && map.show_website_url !== 'false');
                 }
             })
             .catch(err => console.warn('Public settings fetch failed', err));
@@ -458,6 +466,8 @@ const RentalBills = () => {
         setIssueDate(new Date().toISOString().split('T')[0]);
         setTagline(brandingSettings?.company_tagline || brandingSettings?.tagline || 'Equipment Rental, Machinery Leasing & Plant Asset Services');
         setShowTagline(true);
+        setCompanyWebsite(brandingSettings?.website_url || '');
+        setShowCompanyWebsite(brandingSettings?.show_website_url !== false);
         setSelectedCustomerId('');
         setCustomerName('');
         setCustomerAddress('');
@@ -499,6 +509,8 @@ const RentalBills = () => {
         if (data.workflowMode) setWorkflowMode(data.workflowMode);
         if (data.tagline !== undefined) setTagline(data.tagline);
         if (data.showTagline !== undefined) setShowTagline(data.showTagline);
+        if (data.companyWebsite !== undefined) setCompanyWebsite(data.companyWebsite);
+        if (data.showCompanyWebsite !== undefined) setShowCompanyWebsite(data.showCompanyWebsite);
         setExpectedReturnDate(data.expectedReturnDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]);
         setActualReturnDate(data.actualReturnDate || new Date().toISOString().split('T')[0]);
         setCustomerName(data.customerName || '');
@@ -546,6 +558,8 @@ const RentalBills = () => {
         manualClassification,
         tagline,
         showTagline,
+        companyWebsite,
+        showCompanyWebsite,
         selectedCustomerId,
         customerName,
         customerAddress,
@@ -595,7 +609,7 @@ const RentalBills = () => {
 
         return () => clearTimeout(timer);
     }, [
-        workflowMode, billNumber, issueDate, expectedReturnDate, actualReturnDate, tagline, showTagline, selectedCustomerId,
+        workflowMode, billNumber, issueDate, expectedReturnDate, actualReturnDate, tagline, showTagline, companyWebsite, showCompanyWebsite, selectedCustomerId,
         customerName, customerAddress, customerPhone, customerGstin, siteLocation, rentedItems,
         combinedTotals, showQuantity, showUnitPrice, securityDeposit, lateFeePerDay, damageCharge,
         lossCharge, damageRemarks, issuedByStaff, receivedByCustomer, returnedByCustomer,
@@ -664,6 +678,7 @@ const RentalBills = () => {
                     billNumber, issueDate, expectedReturnDate, actualReturnDate,
                     selectedClassifications, manualClassification, specialClassifications,
                     tagline, showTagline,
+                    companyWebsite, showCompanyWebsite,
                     customerName, customerAddress, customerPhone, customerGstin, siteLocation,
                     rentedItems, combinedTotals, showQuantity, showUnitPrice,
                     securityDeposit, lateFeePerDay, computedLateFees, daysOverdue,
@@ -943,6 +958,33 @@ const RentalBills = () => {
                                 placeholder="e.g. Equipment Rental, Machinery Leasing & Plant Asset Services"
                                 className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none transition ${
                                     !showTagline ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800/50' : ''
+                                }`}
+                            />
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Company Website (URL)</label>
+                                <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={showCompanyWebsite}
+                                        onChange={(e) => setShowCompanyWebsite(e.target.checked)}
+                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 cursor-pointer"
+                                    />
+                                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">Include Website</span>
+                                </label>
+                            </div>
+                            <input
+                                type="text"
+                                value={companyWebsite}
+                                onChange={(e) => setCompanyWebsite(e.target.value)}
+                                disabled={!showCompanyWebsite}
+                                placeholder="e.g. www.krishnaengg.com or https://krishnaengg.com"
+                                className={`w-full border rounded-xl px-3 py-2 text-xs font-bold transition focus:outline-none focus:border-indigo-500 ${
+                                    !showCompanyWebsite 
+                                        ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400' 
+                                        : 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                                 }`}
                             />
                         </div>
@@ -1612,10 +1654,31 @@ const RentalBills = () => {
                                                         </p>
                                                     </div>
                                                 )}
-                                                {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
-                                                    <p className="text-[11px] opacity-85 font-medium mt-0.5 print:text-[10px]">
-                                                        Web: {brandingSettings.website_url}
-                                                    </p>
+                                                {showCompanyWebsite && (companyWebsite || brandingSettings?.website_url) && (
+                                                    <div className="text-[11px] opacity-85 font-medium mt-0.5">
+                                                        <div className="no-print flex items-center gap-1.5 flex-wrap">
+                                                            <span>Web:</span>
+                                                            <input
+                                                                type="text"
+                                                                value={companyWebsite || brandingSettings?.website_url || ''}
+                                                                onChange={(e) => setCompanyWebsite(e.target.value)}
+                                                                placeholder="Enter website URL..."
+                                                                title="Click to edit Company Website directly"
+                                                                className="text-white bg-white/10 hover:bg-white/20 border border-transparent hover:border-white/30 rounded px-1 -mx-1 py-0.5 outline-none w-56 transition text-[11px] font-medium"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowCompanyWebsite(false)}
+                                                                className="text-[10px] text-white/70 hover:text-white ml-1 underline cursor-pointer"
+                                                                title="Hide Website"
+                                                            >
+                                                                Hide
+                                                            </button>
+                                                        </div>
+                                                        <p className="hidden print:block print:text-[10px]">
+                                                            Web: {companyWebsite || brandingSettings?.website_url}
+                                                        </p>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -1654,10 +1717,31 @@ const RentalBills = () => {
                                                 </div>
                                             )}
                                             <p className="text-[11px] text-slate-400 mt-0.5">Yard: Industrial Area Thiruvazhiyode, Palakkad | Ph: +91 9447940835</p>
-                                            {brandingSettings?.show_website_url !== false && brandingSettings?.website_url && (
-                                                <p className="text-[11px] text-slate-400 font-medium mt-0.5 print:text-[10px]">
-                                                    Web: {brandingSettings.website_url}
-                                                </p>
+                                            {showCompanyWebsite && (companyWebsite || brandingSettings?.website_url) && (
+                                                <div className="text-[11px] text-slate-400 font-medium mt-0.5">
+                                                    <div className="no-print flex items-center gap-1.5 flex-wrap">
+                                                        <span>Web:</span>
+                                                        <input
+                                                            type="text"
+                                                            value={companyWebsite || brandingSettings?.website_url || ''}
+                                                            onChange={(e) => setCompanyWebsite(e.target.value)}
+                                                            placeholder="Enter website URL..."
+                                                            title="Click to edit Company Website directly"
+                                                            className="text-slate-600 dark:text-slate-300 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 rounded px-1 -mx-1 py-0.5 outline-none w-56 transition text-[11px] font-medium"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowCompanyWebsite(false)}
+                                                            className="text-[10px] text-slate-400 hover:text-rose-500 ml-1 underline cursor-pointer"
+                                                            title="Hide Website"
+                                                        >
+                                                            Hide
+                                                        </button>
+                                                    </div>
+                                                    <p className="hidden print:block print:text-[10px]">
+                                                        Web: {companyWebsite || brandingSettings?.website_url}
+                                                    </p>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
