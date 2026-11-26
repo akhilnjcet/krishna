@@ -168,8 +168,14 @@ export const EstimationEntryTable = ({
                     className="p-2.5 rounded-2xl border transition-all bg-blue-50/40 dark:bg-blue-950/20 border-blue-200/80 dark:border-blue-900/50 shadow-xs"
                   >
                     <div className="flex items-center gap-1.5">
-                      <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-black text-xs flex items-center justify-center shrink-0">
-                        {index + 1}
+                      <span className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center shrink-0 ${
+                        meta.headingNumber 
+                          ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300' 
+                          : meta.countInSlNo 
+                            ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300' 
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                      }`} title={meta.headingNumber ? `Heading #${meta.headingNumber}` : meta.countInSlNo ? `Item #${meta.displaySlNo}` : 'No Sl No'}>
+                        {meta.headingNumber ? meta.headingNumber : meta.countInSlNo ? meta.displaySlNo : '—'}
                       </span>
                       <span className="px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
                         <FileText size={10} className="inline mr-1" /> Text Only
@@ -212,16 +218,55 @@ export const EstimationEntryTable = ({
                         <Trash2 size={15} />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-blue-100 dark:border-blue-900/40 text-[11px] text-slate-500">
-                      <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(meta.isHeading)}
-                          onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
-                          className="w-3.5 h-3.5 rounded accent-blue-600"
-                        />
-                        <span>Section Heading (Bold)</span>
-                      </label>
+                    <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-blue-100 dark:border-blue-900/40 text-[11px] text-slate-500 flex-wrap">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.isHeading)}
+                            onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
+                            className="w-3.5 h-3.5 rounded accent-blue-600 cursor-pointer"
+                          />
+                          <span>Heading Style</span>
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none" title="Assign sequential numbering (1, 2...) for headings only">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.headingNumbered || meta.isHeadingNumbered)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              onUpdateItem(index, 'headingNumbered', checked);
+                              onUpdateItem(index, 'isHeadingNumbered', checked);
+                              if (checked) {
+                                onUpdateItem(index, 'countInSlNo', false);
+                                onUpdateItem(index, 'isHeading', true);
+                              }
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                          />
+                          <span className={meta.headingNumbered || meta.isHeadingNumbered ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}>
+                            Heading No (1, 2...)
+                          </span>
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none" title="Count this text row in standard item Sl. No. sequence">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.countInSlNo)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              onUpdateItem(index, 'countInSlNo', checked);
+                              if (checked) {
+                                onUpdateItem(index, 'headingNumbered', false);
+                                onUpdateItem(index, 'isHeadingNumbered', false);
+                              }
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer"
+                          />
+                          <span className={meta.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
+                            Count in Sl No
+                          </span>
+                        </label>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
@@ -248,7 +293,7 @@ export const EstimationEntryTable = ({
                   {/* Line 1: Sl No + Item Name Input + Move Up / Down + Delete Button */}
                   <div className="flex items-center gap-1.5">
                     <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs flex items-center justify-center shrink-0">
-                      {index + 1}
+                      {meta.displaySlNo || (index + 1)}
                     </span>
 
                     <input
@@ -522,8 +567,14 @@ export const EstimationEntryTable = ({
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-black text-xs border border-blue-200 dark:border-blue-800">
-                          #{index + 1}
+                        <span className={`px-2 py-0.5 rounded-lg font-black text-xs border ${
+                          meta.headingNumber
+                            ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                            : meta.countInSlNo
+                              ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {meta.headingNumber ? `Heading #${meta.headingNumber}` : meta.countInSlNo ? `#${meta.displaySlNo}` : 'No Sl No'}
                         </span>
                         <span className="px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] uppercase tracking-wider flex items-center gap-1">
                           <FileText size={11} /> Text Only (No Price)
@@ -571,16 +622,58 @@ export const EstimationEntryTable = ({
                         placeholder="Enter heading, title, definition, scope of work, note, or information (No price)..."
                       />
                     </div>
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-blue-100 dark:border-blue-900/40">
-                      <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none text-[11px] text-slate-600 dark:text-slate-400">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(meta.isHeading)}
-                          onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
-                          className="w-3.5 h-3.5 rounded accent-blue-600"
-                        />
-                        <span>Section Heading (Bold)</span>
-                      </label>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-blue-100 dark:border-blue-900/40 flex-wrap gap-2">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none text-[11px] text-slate-600 dark:text-slate-400">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.isHeading)}
+                            onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
+                            className="w-3.5 h-3.5 rounded accent-blue-600"
+                          />
+                          <span>Heading Style</span>
+                        </label>
+
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none text-[11px] text-slate-600 dark:text-slate-400" title="Assign sequential numbering (1, 2...) for headings only">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.headingNumbered || meta.isHeadingNumbered)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              onUpdateItem(index, 'headingNumbered', checked);
+                              onUpdateItem(index, 'isHeadingNumbered', checked);
+                              if (checked) {
+                                onUpdateItem(index, 'countInSlNo', false);
+                                onUpdateItem(index, 'isHeading', true);
+                              }
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                          />
+                          <span className={meta.headingNumbered || meta.isHeadingNumbered ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}>
+                            Heading No (1, 2...)
+                          </span>
+                        </label>
+
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none text-[11px] text-slate-600 dark:text-slate-400" title="Count this text row in standard item Sl. No. sequence">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.countInSlNo)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              onUpdateItem(index, 'countInSlNo', checked);
+                              if (checked) {
+                                onUpdateItem(index, 'headingNumbered', false);
+                                onUpdateItem(index, 'isHeadingNumbered', false);
+                              }
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer"
+                          />
+                          <span className={meta.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
+                            Count in Sl No
+                          </span>
+                        </label>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => {
@@ -608,7 +701,7 @@ export const EstimationEntryTable = ({
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black text-xs border border-indigo-100 dark:border-indigo-900/40">
-                        Item #{index + 1}
+                        Item #{meta.displaySlNo || (index + 1)}
                       </span>
                       {meta.isCombined && (
                         <span className="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] flex items-center gap-1">
@@ -981,33 +1074,85 @@ export const EstimationEntryTable = ({
                         }}
                       >
                         {/* Sl. No. */}
-                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', fontWeight: '800', fontSize: '0.8rem', color: '#3B82F6' }}>
-                          {index + 1}
+                        <td style={{ padding: '0.6rem 0.4rem', textAlign: 'center', fontWeight: '800', fontSize: '0.8rem' }}>
+                          {meta.headingNumber ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black text-xs border border-indigo-200 dark:border-indigo-800" title={`Heading #${meta.headingNumber}`}>
+                              {meta.headingNumber}
+                            </span>
+                          ) : meta.countInSlNo ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-black text-xs">
+                              {meta.displaySlNo}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 dark:text-slate-600 font-bold text-xs" title="No Serial Number">
+                              —
+                            </span>
+                          )}
                         </td>
 
                         {/* Full Span Text Input */}
                         <td colSpan="5" style={{ padding: '0.6rem 0.6rem' }}>
                           <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-extrabold text-[10px] uppercase tracking-wider shrink-0">
                                 <FileText size={10} /> Text Only (No Price)
                               </span>
-                              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 cursor-pointer select-none">
+                              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer select-none">
                                 <input
                                   type="checkbox"
                                   checked={Boolean(meta.isHeading)}
                                   onChange={(e) => onUpdateItem(index, 'isHeading', e.target.checked)}
-                                  className="w-3 h-3 rounded accent-blue-600"
+                                  className="w-3.5 h-3.5 rounded accent-blue-600 cursor-pointer"
                                 />
                                 <span>Heading Style</span>
                               </label>
+
+                              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer select-none" title="Assign sequential numbering (1, 2...) for headings only">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(meta.headingNumbered || meta.isHeadingNumbered)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    onUpdateItem(index, 'headingNumbered', checked);
+                                    onUpdateItem(index, 'isHeadingNumbered', checked);
+                                    if (checked) {
+                                      onUpdateItem(index, 'countInSlNo', false);
+                                      onUpdateItem(index, 'isHeading', true);
+                                    }
+                                  }}
+                                  className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                                />
+                                <span className={meta.headingNumbered || meta.isHeadingNumbered ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}>
+                                  Heading No (1, 2...)
+                                </span>
+                              </label>
+
+                              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer select-none" title="Count this text row in standard item Sl. No. sequence">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(meta.countInSlNo)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    onUpdateItem(index, 'countInSlNo', checked);
+                                    if (checked) {
+                                      onUpdateItem(index, 'headingNumbered', false);
+                                      onUpdateItem(index, 'isHeadingNumbered', false);
+                                    }
+                                  }}
+                                  className="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer"
+                                />
+                                <span className={meta.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
+                                  Count in Sl No
+                                </span>
+                              </label>
+
                               <button
                                 type="button"
                                 onClick={() => {
                                   onUpdateItem(index, 'isTextOnly', false);
                                   onUpdateItem(index, 'entryType', 'item');
                                 }}
-                                className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold ml-auto"
+                                className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold ml-auto cursor-pointer"
                               >
                                 Convert to Normal Item
                               </button>
@@ -1077,7 +1222,7 @@ export const EstimationEntryTable = ({
                     >
                       {/* Sl. No. */}
                       <td style={{ padding: '0.6rem 0.5rem', textAlign: 'center', fontWeight: '700', fontSize: '0.8rem', color: '#64748B' }}>
-                        {index + 1}
+                        {meta.displaySlNo || (index + 1)}
                       </td>
 
                       {/* Item Name */}

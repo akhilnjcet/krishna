@@ -450,6 +450,41 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}, enableQu
         }
     }
 
+    // Assign sequential item numbers and heading numbers
+    let itemCounter = 0;
+    let headingCounter = 0;
+
+    for (let idx = 0; idx < metaList.length; idx++) {
+        const meta = metaList[idx];
+        if (meta.isTextOnly || meta.entryType === 'text') {
+            if (meta.countInSlNo) {
+                itemCounter++;
+                meta.itemSerial = itemCounter;
+                meta.displaySlNo = String(itemCounter);
+                meta.formattedSlNo = String(itemCounter).padStart(2, '0');
+                meta.headingNumber = null;
+            } else if (meta.headingNumbered || meta.isHeadingNumbered) {
+                headingCounter++;
+                meta.headingNumber = headingCounter;
+                meta.displaySlNo = String(headingCounter);
+                meta.formattedSlNo = String(headingCounter).padStart(2, '0');
+                meta.itemSerial = null;
+            } else {
+                // Default: Text only rows do not have Sl No and do not consume item count
+                meta.itemSerial = null;
+                meta.displaySlNo = '';
+                meta.formattedSlNo = '';
+                meta.headingNumber = null;
+            }
+        } else {
+            itemCounter++;
+            meta.itemSerial = itemCounter;
+            meta.displaySlNo = String(itemCounter);
+            meta.formattedSlNo = String(itemCounter).padStart(2, '0');
+            meta.headingNumber = null;
+        }
+    }
+
     return metaList;
 };
 

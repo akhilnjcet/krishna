@@ -1144,12 +1144,48 @@ const LabourBillsTab = () => {
 
                                         {row.isTextOnly ? (
                                             <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-sky-200 dark:border-sky-800/50 space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400">Note / Heading / Definition</label>
+                                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                                    <div className="flex items-center gap-3 flex-wrap">
+                                                        <label className="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400">Note / Heading</label>
+                                                        <label className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-bold text-slate-500">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(row.headingNumbered || row.isHeadingNumbered)}
+                                                                onChange={(e) => {
+                                                                    const checked = e.target.checked;
+                                                                    handleLabourRowChange(idx, 'headingNumbered', checked);
+                                                                    handleLabourRowChange(idx, 'isHeadingNumbered', checked);
+                                                                    if (checked) handleLabourRowChange(idx, 'countInSlNo', false);
+                                                                }}
+                                                                className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                                                            />
+                                                            <span className={row.headingNumbered || row.isHeadingNumbered ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}>
+                                                                Heading No (1, 2...)
+                                                            </span>
+                                                        </label>
+                                                        <label className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-bold text-slate-500">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={Boolean(row.countInSlNo)}
+                                                                onChange={(e) => {
+                                                                    const checked = e.target.checked;
+                                                                    handleLabourRowChange(idx, 'countInSlNo', checked);
+                                                                    if (checked) {
+                                                                        handleLabourRowChange(idx, 'headingNumbered', false);
+                                                                        handleLabourRowChange(idx, 'isHeadingNumbered', false);
+                                                                    }
+                                                                }}
+                                                                className="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer"
+                                                            />
+                                                            <span className={row.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
+                                                                Count in Sl No
+                                                            </span>
+                                                        </label>
+                                                    </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleLabourRowChange(idx, 'isTextOnly', false)}
-                                                        className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 underline cursor-pointer"
+                                                        className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 underline cursor-pointer ml-auto"
                                                     >
                                                         Convert to crew task
                                                     </button>
@@ -1646,10 +1682,18 @@ const LabourBillsTab = () => {
                                                     const colSpan = 3 + (showQuantity ? 2 : 0) + (showUnitPrice ? 1 : 0);
                                                     return (
                                                         <tr key={r.id || i} className="bg-slate-50/80 dark:bg-slate-800/80 border-y border-slate-200 dark:border-slate-700">
-                                                            <td className="p-3 font-bold text-slate-400 text-center">{i + 1}</td>
+                                                            <td className="p-3 font-bold text-slate-400 text-center">
+                                                                {r.headingNumber ? (
+                                                                    <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{r.headingNumber}</span>
+                                                                ) : r.countInSlNo ? (
+                                                                    r.displaySlNo || (i + 1)
+                                                                ) : ''}
+                                                            </td>
                                                             <td colSpan={colSpan - 1} className="p-3 text-left">
                                                                 <span className="font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide text-xs">
-                                                                    {r.workDescription || r.text || r.name || 'NOTE / SPECIFICATION'}
+                                                                    {r.headingNumber && !r.workDescription?.startsWith(`${r.headingNumber}.`)
+                                                                        ? `${r.headingNumber}. ${r.workDescription || r.text || r.name || 'NOTE / SPECIFICATION'}`
+                                                                        : (r.workDescription || r.text || r.name || 'NOTE / SPECIFICATION')}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -1658,7 +1702,7 @@ const LabourBillsTab = () => {
                                                 const lineTotal = (parseFloat(r.labourersCount || 0) * parseFloat(r.workingDays || 0) * parseFloat(r.dailyRate || 0));
                                                 return (
                                                     <tr key={r.id || i} className={i % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
-                                                        <td className="p-3 font-bold text-slate-400">{i + 1}</td>
+                                                        <td className="p-3 font-bold text-slate-400">{r.displaySlNo || (i + 1)}</td>
                                                         <td className="p-3 font-bold text-slate-900 dark:text-white">{r.workDescription || 'Labour Crew'}</td>
                                                         <td className="p-3 text-center text-slate-500">{r.unit}</td>
                                                         {showQuantity && <td className="p-3 text-center font-bold">{r.labourersCount}</td>}

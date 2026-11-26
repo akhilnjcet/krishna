@@ -1128,12 +1128,48 @@ const RentalBills = () => {
 
                                     {item.isTextOnly ? (
                                         <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-sky-200 dark:border-sky-800/50 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400">Heading / Condition Note / Information</label>
+                                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                                <div className="flex items-center gap-3 flex-wrap">
+                                                    <label className="text-[9px] font-black uppercase text-sky-600 dark:text-sky-400">Heading / Condition Note</label>
+                                                    <label className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-bold text-slate-500">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(item.headingNumbered || item.isHeadingNumbered)}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked;
+                                                                handleItemChange(idx, 'headingNumbered', checked);
+                                                                handleItemChange(idx, 'isHeadingNumbered', checked);
+                                                                if (checked) handleItemChange(idx, 'countInSlNo', false);
+                                                            }}
+                                                            className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                                                        />
+                                                        <span className={item.headingNumbered || item.isHeadingNumbered ? 'text-indigo-600 dark:text-indigo-400 font-black' : ''}>
+                                                            Heading No (1, 2...)
+                                                        </span>
+                                                    </label>
+                                                    <label className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-bold text-slate-500">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(item.countInSlNo)}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked;
+                                                                handleItemChange(idx, 'countInSlNo', checked);
+                                                                if (checked) {
+                                                                    handleItemChange(idx, 'headingNumbered', false);
+                                                                    handleItemChange(idx, 'isHeadingNumbered', false);
+                                                                }
+                                                            }}
+                                                            className="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer"
+                                                        />
+                                                        <span className={item.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
+                                                            Count in Sl No
+                                                        </span>
+                                                    </label>
+                                                </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleItemChange(idx, 'isTextOnly', false)}
-                                                    className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 underline cursor-pointer"
+                                                    className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 underline cursor-pointer ml-auto"
                                                 >
                                                     Convert to machine entry
                                                 </button>
@@ -1682,10 +1718,18 @@ const RentalBills = () => {
                                                 const colSpan = 4 + (showUnitPrice ? 1 : 0) + (showQuantity ? 1 : 0);
                                                 return (
                                                     <tr key={item.id || idx} className="bg-slate-50/80 dark:bg-slate-800/80 border-y border-slate-200 dark:border-slate-700">
-                                                        <td className="p-3 font-bold text-slate-400 text-center">{idx + 1}</td>
+                                                        <td className="p-3 font-bold text-slate-400 text-center">
+                                                            {item.headingNumber ? (
+                                                                <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{item.headingNumber}</span>
+                                                            ) : item.countInSlNo ? (
+                                                                item.displaySlNo || (idx + 1)
+                                                            ) : ''}
+                                                        </td>
                                                         <td colSpan={colSpan - 1} className="p-3 text-left">
                                                             <span className="font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wide text-xs">
-                                                                {item.itemName || item.text || item.name || 'NOTE / TERMS'}
+                                                                {item.headingNumber && !item.itemName?.startsWith(`${item.headingNumber}.`)
+                                                                    ? `${item.headingNumber}. ${item.itemName || item.text || item.name || 'NOTE / TERMS'}`
+                                                                    : (item.itemName || item.text || item.name || 'NOTE / TERMS')}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -1694,7 +1738,7 @@ const RentalBills = () => {
                                             const total = (parseFloat(item.rate || 0) * parseFloat(item.duration || 1) * parseFloat(item.quantity || 1));
                                             return (
                                                 <tr key={item.id || idx} className={idx % 2 === 1 ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-900'}>
-                                                    <td className="p-3 font-bold text-slate-400">{idx + 1}</td>
+                                                    <td className="p-3 font-bold text-slate-400">{item.displaySlNo || (idx + 1)}</td>
                                                     <td className="p-3 font-bold text-slate-900 dark:text-white">
                                                         {item.itemName}
                                                         {item.remarks && <p className="text-[11px] text-slate-500 font-normal">{item.remarks}</p>}

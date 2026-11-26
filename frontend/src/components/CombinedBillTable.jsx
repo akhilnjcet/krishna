@@ -106,14 +106,18 @@ export const CombinedBillTableBody = ({
                 style={{ 
                   padding: '0.65rem 0.6rem', 
                   fontSize: '0.8rem', 
-                  color: '#64748B',
+                  color: meta.headingNumber ? (textColor || '#1E293B') : '#64748B',
                   textAlign: 'left',
                   verticalAlign: 'top',
                   width: '40px',
-                  fontWeight: '700'
+                  fontWeight: meta.headingNumber ? '800' : '700'
                 }}
               >
-                {String(idx + 1).padStart(2, '0')}
+                {meta.headingNumber 
+                  ? String(meta.headingNumber)
+                  : meta.countInSlNo 
+                    ? (meta.formattedSlNo || String(meta.displaySlNo).padStart(2, '0'))
+                    : ''}
               </td>
 
               <td 
@@ -160,7 +164,7 @@ export const CombinedBillTableBody = ({
                 width: '40px'
               }}
             >
-              {String(idx + 1).padStart(2, '0')}
+              {meta.formattedSlNo || String(meta.displaySlNo || (idx + 1)).padStart(2, '0')}
             </td>
 
             {/* Item Description */}
