@@ -266,6 +266,22 @@ export const EstimationEntryTable = ({
                             Count in Sl No
                           </span>
                         </label>
+
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none" title="Restart item numbering (1, 2...) for subsequent items following this heading">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.startNextItemFrom1 || meta.restartNextItemNo)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              onUpdateItem(index, 'startNextItemFrom1', checked);
+                              onUpdateItem(index, 'restartNextItemNo', checked);
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-amber-600 cursor-pointer"
+                          />
+                          <span className={meta.startNextItemFrom1 || meta.restartNextItemNo ? 'text-amber-600 dark:text-amber-400 font-black' : ''}>
+                            Next Item Start with 1
+                          </span>
+                        </label>
                       </div>
                       <button
                         type="button"
@@ -670,6 +686,22 @@ export const EstimationEntryTable = ({
                           />
                           <span className={meta.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
                             Count in Sl No
+                          </span>
+                        </label>
+
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer font-bold select-none text-[11px] text-slate-600 dark:text-slate-400" title="Restart item numbering (1, 2...) for subsequent items following this heading">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(meta.startNextItemFrom1 || meta.restartNextItemNo)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              onUpdateItem(index, 'startNextItemFrom1', checked);
+                              onUpdateItem(index, 'restartNextItemNo', checked);
+                            }}
+                            className="w-3.5 h-3.5 rounded accent-amber-600 cursor-pointer"
+                          />
+                          <span className={meta.startNextItemFrom1 || meta.restartNextItemNo ? 'text-amber-600 dark:text-amber-400 font-black' : ''}>
+                            Next Item Start with 1
                           </span>
                         </label>
                       </div>
@@ -1143,6 +1175,22 @@ export const EstimationEntryTable = ({
                                 />
                                 <span className={meta.countInSlNo ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}>
                                   Count in Sl No
+                                </span>
+                              </label>
+
+                              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer select-none" title="Restart item numbering (1, 2...) for subsequent items following this heading">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(meta.startNextItemFrom1 || meta.restartNextItemNo)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    onUpdateItem(index, 'startNextItemFrom1', checked);
+                                    onUpdateItem(index, 'restartNextItemNo', checked);
+                                  }}
+                                  className="w-3.5 h-3.5 rounded accent-amber-600 cursor-pointer"
+                                />
+                                <span className={meta.startNextItemFrom1 || meta.restartNextItemNo ? 'text-amber-600 dark:text-amber-400 font-black' : ''}>
+                                  Next Item Start with 1
                                 </span>
                               </label>
 

@@ -476,6 +476,11 @@ export const computeItemSectionMeta = (items = [], combinedTotals = {}, enableQu
                 meta.formattedSlNo = '';
                 meta.headingNumber = null;
             }
+
+            // If user checked "Next Item Start with 1", reset item counter so the next normal item restarts at 1
+            if (meta.startNextItemFrom1 || meta.restartNextItemNo || meta.startNextWith1) {
+                itemCounter = 0;
+            }
         } else {
             itemCounter++;
             meta.itemSerial = itemCounter;

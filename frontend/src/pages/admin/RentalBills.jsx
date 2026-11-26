@@ -1207,6 +1207,21 @@ const RentalBills = () => {
                                                             Count in Sl No
                                                         </span>
                                                     </label>
+                                                    <label className="inline-flex items-center gap-1 cursor-pointer select-none text-[11px] font-bold text-slate-500" title="Restart item numbering (1, 2...) for subsequent items following this heading">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(item.startNextItemFrom1 || item.restartNextItemNo)}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked;
+                                                                handleItemChange(idx, 'startNextItemFrom1', checked);
+                                                                handleItemChange(idx, 'restartNextItemNo', checked);
+                                                            }}
+                                                            className="w-3.5 h-3.5 rounded accent-amber-600 cursor-pointer"
+                                                        />
+                                                        <span className={item.startNextItemFrom1 || item.restartNextItemNo ? 'text-amber-600 dark:text-amber-400 font-black' : ''}>
+                                                            Next Item Start with 1
+                                                        </span>
+                                                    </label>
                                                 </div>
                                                 <button
                                                     type="button"
